@@ -32,8 +32,7 @@ const LLM_PROVIDERS = {
         models: [
             { id: 'gemini-2.5-pro-preview-06-05', name: 'Gemini 2.5 Pro (Mais recente)' },
             { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Rápido)' },
-            { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Estável)' },
-            { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Econômico)' },
+            { id: 'gemini-exp-1206', name: 'Gemini 3.0 Experimental' },
         ],
         envVar: 'GOOGLE_GENERATIVE_AI_API_KEY'
     },
