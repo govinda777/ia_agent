@@ -26,16 +26,15 @@ export async function POST(req: Request) {
                 agentId,
                 userId: agent.userId,
                 externalId: `web_test_${Date.now()}`, // Identificador temporário para teste web
-
             }).returning();
+
+            if (!newThread) {
+                return NextResponse.json({ error: 'Falha ao criar thread' }, { status: 500 });
+            }
             currentThreadId = newThread.id;
         }
 
         // 3. Processar mensagem na Stage Machine
-        // Note: processMessage agora deve cuidar de salvar mensagens no banco se necessário
-        // ou podemos salvar aqui antes de chamar.
-        // Vamos assumir que processMessage retorna a string de resposta.
-
         const responseText = await stageMachine.processMessage(
             agent.userId,
             agentId,
