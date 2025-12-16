@@ -55,8 +55,10 @@ export async function POST(request: Request) {
                     email: 'admin@ia-agent.com',
                 }).returning();
 
-                if (result && result.length > 0) {
-                    userId = result[0].id;
+
+                const newUser = result?.[0];
+                if (newUser) {
+                    userId = newUser.id;
                 } else {
                     throw new Error('Falha crítica: Não foi possível definir um usuário dono para o agente.');
                 }
