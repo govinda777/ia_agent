@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Header, PageWrapper, PageSection } from '@/components/layout';
 import { Button } from '@/components/ui';
-import { Plus, Bot, Edit, Power } from 'lucide-react';
+import { Plus, Bot, Edit, Power, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
 /**
@@ -57,6 +57,28 @@ export default function AgentsPage() {
             ));
         } catch (error) {
             console.error('Erro ao alterar status:', error);
+        }
+    };
+
+    const deleteAgent = async (agentId: string, agentName: string) => {
+        if (!confirm(`Tem certeza que deseja apagar o agente "${agentName}"?\n\nEsta ação é irreversível e irá remover:\n- Todas as conversas\n- Todos os estágios\n- Todo o conhecimento associado`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/agents/${agentId}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                setAgents(prev => prev.filter(a => a.id !== agentId));
+            } else {
+                const data = await res.json();
+                alert(`Erro ao apagar agente: ${data.error || 'Erro desconhecido'}`);
+            }
+        } catch (error) {
+            console.error('Erro ao apagar agente:', error);
+            alert('Erro ao apagar agente. Tente novamente.');
         }
     };
 
@@ -174,11 +196,20 @@ export default function AgentsPage() {
                                         <button
                                             onClick={() => toggleAgentStatus(agent.id, agent.isActive)}
                                             className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${agent.isActive
-                                                    ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                                                    : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
+                                                ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                                                : 'bg-slate-200 text-slate-500 hover:bg-slate-300'
                                                 }`}
+                                            title={agent.isActive ? 'Desativar agente' : 'Ativar agente'}
                                         >
                                             <Power className="h-4 w-4" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => deleteAgent(agent.id, agent.name)}
+                                            className="flex h-9 w-9 items-center justify-center rounded-full bg-red-50 text-red-500 transition-colors hover:bg-red-100 hover:text-red-600"
+                                            title="Apagar agente"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
                                 </div>
