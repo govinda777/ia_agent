@@ -50,12 +50,22 @@ export async function POST(request: Request) {
                 userId = firstUser.id;
             } else {
                 // Último caso: cria um usuário padrão se não existir nenhum
-                const [newUser] = await db.insert(users).values({
+                const result = await db.insert(users).values({
                     name: 'Admin',
                     email: 'admin@ia-agent.com',
                 }).returning();
-                userId = newUser.id;
+
+                if (result && result.length > 0) {
+                    userId = result[0].id;
+                } else {
+                    throw new Error('Falha crítica: Não foi possível definir um usuário dono para o agente.');
+                }
             }
+        }
+
+        // Safety lock: Se ainda assim user_id for null/undefined (ex: banco vazio e insert falhou), lançar erro antes do insert do agente
+        if (!userId) {
+            throw new Error('UserId inválido ou inexistente. Não é possível criar o agente.');
         }
 
         const newAgent = await db.insert(agents).values({
