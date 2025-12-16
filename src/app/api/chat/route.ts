@@ -24,8 +24,9 @@ export async function POST(req: Request) {
         if (!currentThreadId) {
             const [newThread] = await db.insert(threads).values({
                 agentId,
-                userId: agent.userId, // Em produção, seria o usuário final (visitante)
-                platform: 'web_test',
+                userId: agent.userId,
+                externalId: `web_test_${Date.now()}`, // Identificador temporário para teste web
+
             }).returning();
             currentThreadId = newThread.id;
         }
