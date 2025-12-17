@@ -37,6 +37,8 @@ const createAgentSchema = z.object({
 });
 
 // Schema de validação para atualização
+import { getWorkflowTemplate } from '@/lib/workflow-templates';
+
 const updateAgentSchema = createAgentSchema.partial().extend({
     id: z.string().uuid(),
 });
@@ -52,6 +54,9 @@ export async function createAgentAction(input: CreateAgentInput) {
         // Validação
         const validated = createAgentSchema.parse(input);
 
+        // Gerar workflow padrão
+        const defaultWorkflow = getWorkflowTemplate('default');
+
         // Inserção
         const [newAgent] = await db
             .insert(agents)
@@ -61,11 +66,13 @@ export async function createAgentAction(input: CreateAgentInput) {
                 description: validated.description || null,
                 systemPrompt: validated.systemPrompt,
                 modelConfig: validated.modelConfig || {
-                    model: 'gpt-4o-mini',
+                    model: 'gpt-4o',
+                    provider: 'openai',
                     temperature: 0.7,
                     maxTokens: 1024,
                 },
                 enabledTools: validated.enabledTools || [],
+                workflowConfig: defaultWorkflow,
                 isActive: false,
                 isDefault: false,
             })

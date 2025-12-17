@@ -285,6 +285,23 @@ export function TestTab() {
                         </div>
                     )}
 
+                    {/* Fallback: Mostrar variáveis mesmo sem stages */}
+                    {threadId && threadState.stages.length === 0 && Object.keys(threadState.variables).length > 0 && (
+                        <div className="border-t pt-4 mt-4">
+                            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
+                                Variáveis Coletadas
+                            </h4>
+                            <div className="space-y-2">
+                                {Object.entries(threadState.variables).map(([key, value]) => (
+                                    <div key={key} className="rounded-lg border border-slate-200 p-3">
+                                        <p className="text-xs font-mono text-slate-500">{key}</p>
+                                        <p className="text-sm font-medium text-slate-800">{String(value)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="border-t pt-4 mt-4">
                         <p className="text-xs text-muted-foreground">
                             💡 As conversas de teste são salvas localmente e persistem entre recarregamentos.

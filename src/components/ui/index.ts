@@ -34,3 +34,4 @@ export { Avatar, AvatarImage, AvatarFallback } from './avatar';
 export { Badge, badgeVariants } from './badge';
 export { Skeleton } from './skeleton';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { RadioGroup, RadioGroupItem } from './radio-group';
