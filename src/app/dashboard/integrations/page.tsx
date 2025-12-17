@@ -38,6 +38,29 @@ interface Integration {
 function IntegrationsContent() {
     const searchParams = useSearchParams();
     const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; email?: string } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Buscar status real das integrações
+    useEffect(() => {
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/integrations/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    setGoogleStatus(data.google);
+                } else {
+                    setGoogleStatus({ connected: false });
+                }
+            } catch (error) {
+                console.error('Erro ao buscar status:', error);
+                setGoogleStatus({ connected: false });
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchStatus();
+    }, []);
 
     // Verificar parâmetros de retorno do OAuth
     useEffect(() => {
@@ -46,6 +69,15 @@ function IntegrationsContent() {
 
         if (success === 'google_connected') {
             setNotification({ type: 'success', message: 'Google Calendar conectado com sucesso!' });
+            // Refresh status after connection
+            setLoading(true);
+            fetch('/api/integrations/status')
+                .then(res => res.json())
+                .then(data => {
+                    setGoogleStatus(data.google);
+                    setLoading(false);
+                })
+                .catch(() => setLoading(false));
         } else if (error === 'access_denied') {
             setNotification({ type: 'error', message: 'Acesso negado. Tente novamente.' });
         } else if (error) {
@@ -68,8 +100,8 @@ function IntegrationsContent() {
             description: 'Calendar e Sheets',
             icon: Chrome,
             color: 'from-red-500 to-yellow-500',
-            connected: false, // TODO: Buscar do banco
-            email: undefined,
+            connected: googleStatus?.connected ?? false,
+            email: googleStatus?.email,
             features: [
                 { name: 'Google Calendar', enabled: true },
                 { name: 'Google Sheets', enabled: true },
@@ -106,6 +138,20 @@ function IntegrationsContent() {
             } catch (error) {
                 setNotification({ type: 'error', message: 'Erro ao conectar integração' });
             }
+        }
+    };
+
+    const handleDisconnect = async (integrationId: string) => {
+        try {
+            const res = await fetch(`/api/integrations/${integrationId}/disconnect`, { method: 'POST' });
+            if (res.ok) {
+                setNotification({ type: 'success', message: 'Integração desconectada.' });
+                setGoogleStatus({ connected: false });
+            } else {
+                setNotification({ type: 'error', message: 'Erro ao desconectar.' });
+            }
+        } catch (error) {
+            setNotification({ type: 'error', message: 'Erro ao desconectar integração.' });
         }
     };
 
@@ -197,12 +243,23 @@ function IntegrationsContent() {
                             <div className="flex gap-2">
                                 {integration.connected ? (
                                     <>
-                                        <Button variant="outline" size="sm" className="flex-1">
-                                            <Settings className="h-4 w-4" />
-                                            Configurar
-                                        </Button>
-                                        <Button variant="outline" size="sm">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1"
+                                            onClick={() => handleConnect(integration)}
+                                        >
                                             <RefreshCw className="h-4 w-4" />
+                                            Reconectar
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-600 hover:bg-red-50 hover:border-red-200"
+                                            onClick={() => handleDisconnect(integration.id)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                            Desconectar
                                         </Button>
                                     </>
                                 ) : (
@@ -211,9 +268,10 @@ function IntegrationsContent() {
                                         size="sm"
                                         className="w-full"
                                         onClick={() => handleConnect(integration)}
+                                        disabled={loading}
                                     >
                                         <ExternalLink className="h-4 w-4" />
-                                        Conectar {integration.name}
+                                        {loading ? 'Carregando...' : `Conectar ${integration.name}`}
                                     </Button>
                                 )}
                             </div>
