@@ -7,7 +7,7 @@
  */
 
 import { db } from '@/lib/db';
-import { agents } from '@/db/schema';
+import { agents, agentStages } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -77,6 +77,23 @@ export async function createAgentAction(input: CreateAgentInput) {
                 isDefault: false,
             })
             .returning();
+
+        // Inserir estágios padrão na tabela agentStages para o stage-machine
+        if (newAgent && defaultWorkflow.length > 0) {
+            await db.insert(agentStages).values(
+                defaultWorkflow.map((stage, index) => ({
+                    agentId: newAgent.id,
+                    name: stage.name,
+                    type: stage.type,
+                    order: index,
+                    instructions: stage.prompt || stage.conditions || '',
+                    entryCondition: stage.conditions || null,
+                    requiredVariables: stage.requiredVariables || [],
+                    nextStageId: null, // Será configurado depois se necessário
+                    isActive: true,
+                }))
+            );
+        }
 
         // Revalidar cache
         revalidatePath('/dashboard/agents');
