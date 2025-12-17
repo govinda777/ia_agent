@@ -14,7 +14,6 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutDashboard,
     Bot,
-    BookOpen,
     MessageSquare,
     BarChart3,
     Plug,
@@ -34,11 +33,6 @@ const navigation = [
         name: 'Agentes',
         href: '/dashboard/agents',
         icon: Bot,
-    },
-    {
-        name: 'Conhecimento',
-        href: '/dashboard/knowledge',
-        icon: BookOpen,
     },
     {
         name: 'Conversas',

@@ -113,11 +113,6 @@ export const SIDEBAR_NAVIGATION = [
         icon: 'Bot',
     },
     {
-        name: 'Conhecimento',
-        href: '/dashboard/knowledge',
-        icon: 'BookOpen',
-    },
-    {
         name: 'Conversas',
         href: '/dashboard/threads',
         icon: 'MessageSquare',

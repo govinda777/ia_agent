@@ -220,6 +220,17 @@ export const agents = pgTable('agents', {
         outsideMessage: 'Estamos fora do horário de atendimento. Retornaremos em breve!',
     }),
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // PER-AGENT INTEGRATIONS
+    // ─────────────────────────────────────────────────────────────────────────
+
+    // ID da integração Google específica deste agente (nullable = usa integração principal)
+    googleIntegrationId: uuid('google_integration_id')
+        .references(() => integrations.id, { onDelete: 'set null' }),
+
+    // Se true, usa a integração principal da conta ao invés de uma específica
+    useMainGoogleIntegration: boolean('use_main_google_integration').default(true),
+
     // Status
     isActive: boolean('is_active').default(false).notNull(),
     isDefault: boolean('is_default').default(false).notNull(), // Agente padrão do usuário
