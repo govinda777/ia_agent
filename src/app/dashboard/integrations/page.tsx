@@ -47,6 +47,9 @@ function IntegrationsContent() {
     const [googleStatus, setGoogleStatus] = useState<{ connected: boolean; email?: string } | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // User ID para requisições
+    const [userId, setUserId] = useState<string | null>(null);
+
     // WhatsApp Main Integration
     const [whatsappInstance, setWhatsappInstance] = useState<WhatsAppInstanceInfo | null>(null);
     const [whatsappLoading, setWhatsappLoading] = useState(true);
@@ -62,6 +65,22 @@ function IntegrationsContent() {
     });
     const [showApiForm, setShowApiForm] = useState(false);
 
+    // Buscar instância WhatsApp principal
+    const fetchMainWhatsAppInstance = useCallback(async (uid: string) => {
+        setWhatsappLoading(true);
+        try {
+            const res = await fetch(`/api/whatsapp/instance?main=true&userId=${uid}`);
+            if (res.ok) {
+                const data = await res.json();
+                setWhatsappInstance(data.instance);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar instância WhatsApp:', error);
+        } finally {
+            setWhatsappLoading(false);
+        }
+    }, []);
+
     // Buscar status real das integrações
     useEffect(() => {
         async function fetchStatus() {
@@ -70,6 +89,13 @@ function IntegrationsContent() {
                 if (res.ok) {
                     const data = await res.json();
                     setGoogleStatus(data.google);
+                    setUserId(data.userId);
+
+                    // Buscar instância WhatsApp se tiver userId
+                    if (data.userId) {
+                        fetchMainWhatsAppInstance(data.userId);
+                    }
+
                     // WhatsApp main instance seria data.whatsapp
                     if (data.whatsapp) {
                         setWhatsappInstance(data.whatsapp);
@@ -86,32 +112,12 @@ function IntegrationsContent() {
             }
         }
         fetchStatus();
-    }, []);
-
-    // Buscar instância WhatsApp principal (sem agentId = principal)
-    const fetchMainWhatsAppInstance = useCallback(async () => {
-        setWhatsappLoading(true);
-        try {
-            const res = await fetch('/api/whatsapp/instance?main=true');
-            if (res.ok) {
-                const data = await res.json();
-                setWhatsappInstance(data.instance);
-            }
-        } catch (error) {
-            console.error('Erro ao buscar instância WhatsApp:', error);
-        } finally {
-            setWhatsappLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        fetchMainWhatsAppInstance();
     }, [fetchMainWhatsAppInstance]);
 
     // Verificar parâmetros de retorno do OAuth
     useEffect(() => {
         const success = searchParams.get('success');
-        const error = searchParams.get('error');
+        const errorParam = searchParams.get('error');
 
         if (success === 'google_connected') {
             setNotification({ type: 'success', message: 'Google Calendar conectado com sucesso!' });
@@ -123,13 +129,13 @@ function IntegrationsContent() {
                     setLoading(false);
                 })
                 .catch(() => setLoading(false));
-        } else if (error === 'access_denied') {
+        } else if (errorParam === 'access_denied') {
             setNotification({ type: 'error', message: 'Acesso negado. Tente novamente.' });
-        } else if (error) {
+        } else if (errorParam) {
             setNotification({ type: 'error', message: 'Erro ao conectar. Tente novamente.' });
         }
 
-        if (success || error) {
+        if (success || errorParam) {
             const timer = setTimeout(() => setNotification(null), 5000);
             return () => clearTimeout(timer);
         }
@@ -176,7 +182,8 @@ function IntegrationsContent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     connectionType: 'qr_code',
-                    isMain: true, // Indica que é a instância principal
+                    isMain: true,
+                    userId: userId,
                 }),
             });
 
@@ -184,7 +191,7 @@ function IntegrationsContent() {
 
             if (data.success) {
                 setShowQRCode(true);
-                await fetchMainWhatsAppInstance();
+                if (userId) await fetchMainWhatsAppInstance(userId);
             } else {
                 setNotification({ type: 'error', message: data.error || 'Erro ao criar instância' });
             }
@@ -210,7 +217,7 @@ function IntegrationsContent() {
             if (res.ok) {
                 setShowQRCode(false);
                 setNotification({ type: 'success', message: 'WhatsApp desconectado.' });
-                await fetchMainWhatsAppInstance();
+                if (userId) await fetchMainWhatsAppInstance(userId);
             } else {
                 setNotification({ type: 'error', message: 'Erro ao desconectar' });
             }
@@ -223,7 +230,7 @@ function IntegrationsContent() {
     function handleWhatsAppConnected(info: { phoneNumber: string; profileName: string }) {
         setShowQRCode(false);
         setNotification({ type: 'success', message: `WhatsApp conectado: ${info.profileName}` });
-        fetchMainWhatsAppInstance();
+        if (userId) fetchMainWhatsAppInstance(userId);
     }
 
     // Handler para criar instância via API Oficial
@@ -242,6 +249,7 @@ function IntegrationsContent() {
                 body: JSON.stringify({
                     connectionType: 'api_oficial',
                     isMain: true,
+                    userId: userId,
                     credentials: {
                         token: apiCredentials.accessToken,
                         phoneNumberId: apiCredentials.phoneNumberId,
@@ -254,7 +262,7 @@ function IntegrationsContent() {
             if (data.success) {
                 setShowApiForm(false);
                 setNotification({ type: 'success', message: 'API Oficial configurada com sucesso!' });
-                await fetchMainWhatsAppInstance();
+                if (userId) await fetchMainWhatsAppInstance(userId);
             } else {
                 setNotification({ type: 'error', message: data.error || 'Erro ao configurar API Oficial' });
             }
@@ -413,7 +421,7 @@ function IntegrationsContent() {
                                 <WhatsAppQRCode
                                     instanceId={whatsappInstance.id}
                                     onConnected={handleWhatsAppConnected}
-                                    onDisconnected={() => fetchMainWhatsAppInstance()}
+                                    onDisconnected={() => { if (userId) fetchMainWhatsAppInstance(userId); }}
                                 />
                             </div>
                         )}
@@ -481,8 +489,8 @@ function IntegrationsContent() {
                                 <button
                                     onClick={() => setSelectedConnectionMode('qr_code')}
                                     className={`w-full p-4 rounded-xl border-2 text-left transition-all ${selectedConnectionMode === 'qr_code'
-                                            ? 'border-green-500 bg-green-50'
-                                            : 'border-slate-200 hover:border-slate-300'
+                                        ? 'border-green-500 bg-green-50'
+                                        : 'border-slate-200 hover:border-slate-300'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -500,8 +508,8 @@ function IntegrationsContent() {
                                 <button
                                     onClick={() => setSelectedConnectionMode('api_oficial')}
                                     className={`w-full p-4 rounded-xl border-2 text-left transition-all ${selectedConnectionMode === 'api_oficial'
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-slate-200 hover:border-slate-300'
+                                        ? 'border-blue-500 bg-blue-50'
+                                        : 'border-slate-200 hover:border-slate-300'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">

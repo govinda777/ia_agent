@@ -40,6 +40,7 @@ export async function GET() {
         });
 
         return NextResponse.json({
+            userId: DEFAULT_USER_ID,
             google: {
                 connected: !!googleIntegration,
                 email: googleEmail,

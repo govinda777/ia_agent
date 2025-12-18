@@ -18,8 +18,9 @@ const REDIRECT_URI = process.env.NEXTAUTH_URL
 // Base URL for redirects
 const BASE_URL = process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
-// TODO: Obter do contexto de auth real
-const DEFAULT_USER_ID = process.env.DEFAULT_USER_ID || '00000000-0000-0000-0000-000000000001';
+// User ID for Google integrations - use a REAL UUID, not the demo pattern
+// This ID should be a legitimate user or a dedicated "system" user
+const DEFAULT_USER_ID = process.env.DEFAULT_USER_ID || 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 /**
  * Ensures the default user exists in the database
