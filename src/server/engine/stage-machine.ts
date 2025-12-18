@@ -279,7 +279,6 @@ export class StageMachine {
 
                     // Buscar usuário com integração Google (primeiro tenta agent.userId, depois busca qualquer um REAL)
                     const { integrations } = await import('@/db/schema');
-                    const { not, like } = await import('drizzle-orm');
                     let calendarUserId = agent.userId;
 
                     // Verificar se o agent.userId tem integração Google
@@ -288,11 +287,14 @@ export class StageMachine {
                     });
 
                     if (!agentIntegration) {
-                        // Buscar qualquer usuário REAL com integração Google (excluir demo users)
+                        // Buscar qualquer usuário REAL com integração Google (excluir demo user específico)
+                        const DEMO_USER_ID = '00000000-0000-0000-0000-000000000001';
+                        const { ne } = await import('drizzle-orm');
+
                         const anyGoogleIntegration = await db.query.integrations.findFirst({
                             where: and(
                                 eq(integrations.provider, 'google'),
-                                not(like(integrations.userId, '00000000%')) // Excluir demo users
+                                ne(integrations.userId, DEMO_USER_ID) // Excluir demo user
                             )
                         });
 
@@ -305,14 +307,14 @@ export class StageMachine {
                         }
                     }
 
-                    // Parse date from Brazilian format (DD/MM) to ISO format
+                    // Parse date from Brazilian format (DD/MM) - handles "terça-feira, 23/12" format
                     const dataStr = String(finalVars.data_reuniao || '');
                     const horarioStr = String(finalVars.horario_reuniao || '10:00');
                     const nome = String(finalVars.nome || 'Lead');
                     const attendeeEmail = String(finalVars.email || '');
 
-                    // Extract day and month
-                    const dateMatch = dataStr.match(/(\d{1,2})[\/\-](\d{1,2})/);
+                    // Extract day and month - more robust regex to handle "terça-feira, 23/12" or just "23/12"
+                    const dateMatch = dataStr.match(/(\d{1,2})\s*[\/\-]\s*(\d{1,2})/);
                     if (dateMatch && attendeeEmail) {
                         const day = parseInt(dateMatch[1]);
                         const month = parseInt(dateMatch[2]) - 1; // JS months are 0-indexed
