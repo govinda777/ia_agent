@@ -125,23 +125,35 @@ export class StageMachine {
         // 5a. DETECÇÃO DE INTENÇÃO DIRETA: Pular para agendamento se lead demonstrar interesse
         const lowerMessage = userMessage.toLowerCase();
         const buyingIntentKeywords = [
-            // Agendar/Marcar direto
+            // PALAVRAS ÚNICAS (mais flexíveis)
+            'agendamento', 'agendar', 'marcar', 'reunião', 'reuniao',
+            'agenda', 'demonstração', 'demonstracao', 'apresentação', 'apresentacao',
+
+            // Frases de agendar/marcar
             'quero agendar', 'quero marcar', 'só marcar', 'só agendar',
             'queria marcar', 'queria agendar', 'gostaria de marcar', 'gostaria de agendar',
             'posso agendar', 'posso marcar', 'podemos marcar', 'vamos marcar',
             'marcar uma reunião', 'marcar uma chamada', 'marcar uma call',
             'agendar uma reunião', 'agendar uma chamada', 'agendar uma call',
             'marcar apresentação', 'marcar uma apresentação',
+            'bora marcar', 'bora agendar', 'pode marcar', 'pode agendar',
+
             // Interesse direto
             'quero contratar', 'quero fazer', 'quero conhecer',
             'quero ver na prática', 'quero uma demonstração',
-            'me interessou', 'tenho interesse', 'estou interessado',
-            // Horários
+            'me interessou', 'tenho interesse', 'estou interessado', 'estou interessada',
+            'fechado', 'fechou', 'vamos fechar', 'quero fechar',
+
+            // Horários e disponibilidade
             'quando podemos', 'qual horário', 'tem horário', 'horário disponível',
+            'qual dia', 'que dia', 'disponibilidade', 'disponível',
+
             // Preço/valores
-            'quero saber mais sobre preço', 'quanto custa', 'qual o valor',
+            'quero saber mais sobre preço', 'quanto custa', 'qual o valor', 'qual valor',
+
             // Urgência
             'preciso urgente', 'o mais rápido possível', 'próxima semana',
+            'essa semana', 'amanhã', 'hoje',
         ];
 
         const hasBuyingIntent = buyingIntentKeywords.some(kw => lowerMessage.includes(kw));
@@ -197,38 +209,74 @@ export class StageMachine {
             extractedFromMessage['nome'] = userMessage.trim();
         }
 
-        // Detectar DATA diretamente da mensagem (ex: "22/12", "dia 22", "22 de dezembro")
+        // Detectar DATA diretamente da mensagem (EXPANDIDO para mais formatos)
+        const now = new Date();
         const datePatterns = [
-            /(\d{1,2})\s*[\/\-]\s*(\d{1,2})/,  // 22/12 ou 22-12
-            /dia\s+(\d{1,2})(?:\s+de\s+(\w+))?/i,  // dia 22, dia 22 de dezembro
-            /(\d{1,2})\s+de\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i,
+            /(\\d{1,2})\\s*[\\/\\-]\\s*(\\d{1,2})/,  // 22/12 ou 22-12
+            /dia\\s+(\\d{1,2})(?:\\s+de\\s+(\\w+))?/i,  // dia 22, dia 22 de dezembro
+            /(\\d{1,2})\\s+de\\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i,
         ];
-        for (const pattern of datePatterns) {
-            const match = userMessage.match(pattern);
-            if (match) {
-                // Converter para formato DD/MM se possível
-                const day = match[1];
-                let month = match[2];
-                if (month && isNaN(parseInt(month))) {
-                    // Converter nome do mês para número
-                    const monthNames: Record<string, string> = {
-                        'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
-                        'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
-                        'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
-                    };
-                    month = monthNames[month.toLowerCase()] || String(new Date().getMonth() + 1).padStart(2, '0');
+
+        // Detectar dias da semana (segunda, terça, etc.)
+        const dayNames: Record<string, number> = {
+            'domingo': 0, 'segunda': 1, 'segunda-feira': 1, 'terça': 2, 'terça-feira': 2, 'terca': 2,
+            'quarta': 3, 'quarta-feira': 3, 'quinta': 4, 'quinta-feira': 4,
+            'sexta': 5, 'sexta-feira': 5, 'sábado': 6, 'sabado': 6
+        };
+
+        // Detectar "amanhã", "hoje", "próxima segunda", etc.
+        if (lowerMessage.includes('amanhã') || lowerMessage.includes('amanha')) {
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            extractedFromMessage['data_reuniao'] = `${tomorrow.getDate().toString().padStart(2, '0')}/${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}`;
+            console.log(`[StageMachine] 📅 Data 'amanhã' detectada: ${extractedFromMessage['data_reuniao']}`);
+        } else if (lowerMessage.includes('hoje')) {
+            extractedFromMessage['data_reuniao'] = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            console.log(`[StageMachine] 📅 Data 'hoje' detectada: ${extractedFromMessage['data_reuniao']}`);
+        } else {
+            // Detectar dia da semana
+            for (const [dayName, dayIndex] of Object.entries(dayNames)) {
+                if (lowerMessage.includes(dayName)) {
+                    const targetDate = new Date(now);
+                    const currentDay = now.getDay();
+                    let daysUntil = dayIndex - currentDay;
+                    if (daysUntil <= 0) daysUntil += 7; // Próxima semana
+                    targetDate.setDate(now.getDate() + daysUntil);
+                    extractedFromMessage['data_reuniao'] = `${targetDate.getDate().toString().padStart(2, '0')}/${(targetDate.getMonth() + 1).toString().padStart(2, '0')}`;
+                    console.log(`[StageMachine] 📅 Data '${dayName}' detectada: ${extractedFromMessage['data_reuniao']}`);
+                    break;
                 }
-                extractedFromMessage['data_reuniao'] = `${day}/${month || String(new Date().getMonth() + 1).padStart(2, '0')}`;
-                console.log(`[StageMachine] 📅 Data extraída diretamente: ${extractedFromMessage['data_reuniao']}`);
-                break;
             }
         }
 
-        // Detectar HORÁRIO diretamente da mensagem (ex: "10h", "às 10", "10:00", "10 da manhã")
+        // Se não detectou por palavras, tentar padrões numéricos
+        if (!extractedFromMessage['data_reuniao']) {
+            for (const pattern of datePatterns) {
+                const match = userMessage.match(pattern);
+                if (match) {
+                    const day = match[1];
+                    let month = match[2];
+                    if (month && isNaN(parseInt(month))) {
+                        const monthNames: Record<string, string> = {
+                            'janeiro': '01', 'fevereiro': '02', 'março': '03', 'abril': '04',
+                            'maio': '05', 'junho': '06', 'julho': '07', 'agosto': '08',
+                            'setembro': '09', 'outubro': '10', 'novembro': '11', 'dezembro': '12'
+                        };
+                        month = monthNames[month.toLowerCase()] || String(now.getMonth() + 1).padStart(2, '0');
+                    }
+                    extractedFromMessage['data_reuniao'] = `${day}/${month || String(now.getMonth() + 1).padStart(2, '0')}`;
+                    console.log(`[StageMachine] 📅 Data extraída diretamente: ${extractedFromMessage['data_reuniao']}`);
+                    break;
+                }
+            }
+        }
+
+        // Detectar HORÁRIO diretamente da mensagem (EXPANDIDO)
         const timePatterns = [
-            /(\d{1,2})(?:[:h](\d{2}))?\s*(?:h|horas?)?/i,  // 10h, 10:00, 10h30
-            /às?\s+(\d{1,2})(?:[:h](\d{2}))?/i,  // às 10, as 10:30
-            /(\d{1,2})\s+(?:da\s+)?(manhã|tarde|noite)/i,  // 10 da manhã
+            /(\\d{1,2})[:h](\\d{2})/i,  // 10:00, 10h30
+            /(\\d{1,2})\\s*h(?:oras?)?/i,  // 10h, 10 horas
+            /às?\\s+(\\d{1,2})(?:[:h](\\d{2}))?/i,  // às 10, as 10:30
+            /(\\d{1,2})\\s+(?:da\\s+)?(manhã|manha|tarde|noite)/i,  // 10 da manhã
         ];
         for (const pattern of timePatterns) {
             const match = userMessage.match(pattern);
@@ -237,12 +285,16 @@ export class StageMachine {
                 const minutes = match[2] || '00';
                 // Ajustar para período (manhã/tarde/noite)
                 if (match[3]) {
-                    if (match[3].toLowerCase() === 'tarde' && hours < 12) hours += 12;
-                    if (match[3].toLowerCase() === 'noite' && hours < 18) hours += 12;
+                    const periodo = match[3].toLowerCase();
+                    if ((periodo === 'tarde') && hours < 12) hours += 12;
+                    if ((periodo === 'noite') && hours < 18) hours += 12;
                 }
-                extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
-                console.log(`[StageMachine] 🕐 Horário extraído diretamente: ${extractedFromMessage['horario_reuniao']}`);
-                break;
+                // Validar horário comercial (8h-20h)
+                if (hours >= 6 && hours <= 22) {
+                    extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
+                    console.log(`[StageMachine] 🕐 Horário extraído diretamente: ${extractedFromMessage['horario_reuniao']}`);
+                    break;
+                }
             }
         }
 
