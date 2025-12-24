@@ -205,7 +205,9 @@ export class StageMachine {
         }
 
         // Detectar nome simples (mensagem curta, provavelmente só o nome)
-        if (userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ')) {
+        // CORREÇÃO: Não considerar email como nome!
+        const isEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i.test(userMessage);
+        if (userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ') && !isEmail) {
             extractedFromMessage['nome'] = userMessage.trim();
         }
 
@@ -323,7 +325,24 @@ export class StageMachine {
         }
 
         // Combinar variáveis existentes + extraídas
-        const allVars = { ...existingVars, ...extractedFromMessage };
+        // CORREÇÃO: Proteger variáveis existentes - não sobrescrever com valores vazios ou quando já existe nome válido
+        const allVars = { ...existingVars };
+        for (const [key, value] of Object.entries(extractedFromMessage)) {
+            const existingValue = existingVars[key];
+            const hasValidExisting = existingValue !== undefined && existingValue !== null && existingValue !== '';
+            const hasValidNew = value !== undefined && value !== null && value !== '';
+
+            // REGRA ESPECIAL: Nunca sobrescrever 'nome' com email
+            if (key === 'nome' && hasValidExisting) {
+                // Não sobrescrever nome existente
+                continue;
+            }
+
+            // Para outras variáveis: só atualiza se não tinha valor ou se o novo é válido
+            if (!hasValidExisting || hasValidNew) {
+                allVars[key] = value;
+            }
+        }
 
         // Verificar se todas as variáveis obrigatórias do estágio atual estão completas
         const hasAllRequired = requiredVars.length === 0 ||
@@ -410,6 +429,8 @@ export class StageMachine {
         if (finalVars['hora_agendamento'] && !finalVars['horario_reuniao']) finalVars['horario_reuniao'] = finalVars['hora_agendamento'];
         if (finalVars['hora'] && !finalVars['horario_reuniao']) finalVars['horario_reuniao'] = finalVars['hora'];
         if (finalVars['horario'] && !finalVars['horario_reuniao']) finalVars['horario_reuniao'] = finalVars['horario'];
+        // CORREÇÃO: Mapear hora_reuniao → horario_reuniao (sinônimo usado pela IA)
+        if (finalVars['hora_reuniao'] && !finalVars['horario_reuniao']) finalVars['horario_reuniao'] = finalVars['hora_reuniao'];
 
         // DEBUG: Log todas as variáveis extraídas
         console.log('[DEBUG] extractedFromMessage:', JSON.stringify(extractedFromMessage));
