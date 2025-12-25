@@ -292,25 +292,56 @@ function simulateConversation() {
         // Simular extração (simplificada)
         const extracted: Partial<AgentVariables> = {};
 
-        // Extrair dados da mensagem
-        if (/^[a-zA-ZÀ-ú]+$/.test(user) && user.length < 20) {
+        // ═══════════════════════════════════════════════════════════
+        // EXTRAÇÃO DE NOME (múltiplos padrões)
+        // ═══════════════════════════════════════════════════════════
+
+        // Padrão 1: "meu nome é X", "me chamo X", "sou X", "sou o X"
+        const namePatterns = [
+            /(?:meu nome (?:é|e)|me chamo|sou (?:o |a )?)\s*([A-ZÀ-Úa-zà-ú]+)/i,
+            /(?:eu sou|aqui é|aqui quem fala é)\s*(?:o |a )?([A-ZÀ-Úa-zà-ú]+)/i,
+        ];
+
+        for (const pattern of namePatterns) {
+            const match = user.match(pattern);
+            if (match && match[1]) {
+                const potentialName = match[1].trim();
+                const nameValidation = validateName(potentialName);
+                if (nameValidation.valid && !currentVars.nome) {
+                    extracted.nome = potentialName;
+                    break;
+                }
+            }
+        }
+
+        // Padrão 2: Mensagem curta apenas com o nome (ex: "Gastão")
+        if (!extracted.nome && /^[a-zA-ZÀ-ú]+$/.test(user) && user.length < 20) {
             const nameValidation = validateName(user);
             if (nameValidation.valid && !currentVars.nome) {
                 extracted.nome = user;
             }
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // EXTRAÇÃO DE EMAIL
+        // ═══════════════════════════════════════════════════════════
         if (user.includes('@')) {
             extracted.email = user.toLowerCase();
         }
 
-        if (/^[aàá]s?\s*\d/i.test(user)) {
+        // ═══════════════════════════════════════════════════════════
+        // EXTRAÇÃO DE HORÁRIO
+        // ═══════════════════════════════════════════════════════════
+        if (/^[aàá]s?\s*\d/i.test(user) || /^\d{1,2}[h:]/i.test(user)) {
             const timeResult = validateTime(user);
             if (timeResult.valid) {
                 extracted.horario_reuniao = timeResult.normalized;
             }
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // EXTRAÇÃO DE DATA (dias da semana)
+        // ═══════════════════════════════════════════════════════════
         if (['segunda', 'terça', 'quarta', 'quinta', 'sexta'].includes(user.toLowerCase())) {
             extracted.data_reuniao = '29/12'; // Simplificado para teste
         }

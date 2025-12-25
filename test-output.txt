@@ -37,17 +37,15 @@
 [36mÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü[0m
 [32m  Ô£à "as 16" ÔåÆ "16:00"[0m
 [32m  Ô£à "├ás 10" ÔåÆ "10:00"[0m
-[31m  ÔØî "14h" deveria ser "14:00"[0m
-[33m     Esperado: "14:00"[0m
-[33m     Recebido: undefined[0m
+[32m  Ô£à "14h" ÔåÆ "14:00"[0m
 [32m  Ô£à "10:30" ÔåÆ "10:30"[0m
 [32m  Ô£à "16h30" ÔåÆ "16:30"[0m
 [32m  Ô£à "3h" rejeitado (fora do hor├írio comercial)[0m
 [32m  Ô£à "as 5" rejeitado (fora do hor├írio comercial)[0m
 [32m  Ô£à "23:00" rejeitado (fora do hor├írio comercial)[0m
 [32m  Ô£à "├ás 2" rejeitado (fora do hor├írio comercial)[0m
-[31m
-  Resultado: 8 passou, 1 falhou[0m
+[32m
+  Resultado: 9 passou, 0 falhou[0m
 
 [36mÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü[0m
 [1m  TESTE: validateEmail()[0m
@@ -82,22 +80,23 @@
   Estado inicial criado[0m
 [36m
   ­ƒæñ Usu├írio: "Ol├í, meu nome ├® Gast├úo"[0m
+[AgentState] Ô£à nome = "Gast├úo"
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: (n├úo definido)[0m
 [0m     data: (n├úo definido)[0m
 [0m     hora: (n├úo definido)[0m
 [36m
   ­ƒæñ Usu├írio: "Tenho uma loja de sapatos"[0m
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: (n├úo definido)[0m
 [0m     data: (n├úo definido)[0m
 [0m     hora: (n├úo definido)[0m
 [36m
   ­ƒæñ Usu├írio: "Meu desafio ├® o tempo de atendimento"[0m
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: (n├úo definido)[0m
 [0m     data: (n├úo definido)[0m
 [0m     hora: (n├úo definido)[0m
@@ -105,7 +104,7 @@
   ­ƒæñ Usu├írio: "segunda"[0m
 [AgentState] Ô£à data_reuniao = "29/12"
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: (n├úo definido)[0m
 [0m     data: 29/12[0m
 [0m     hora: (n├úo definido)[0m
@@ -113,7 +112,7 @@
   ­ƒæñ Usu├írio: "as 16"[0m
 [AgentState] Ô£à horario_reuniao = "16:00"
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: (n├úo definido)[0m
 [0m     data: 29/12[0m
 [0m     hora: 16:00[0m
@@ -121,15 +120,13 @@
   ­ƒæñ Usu├írio: "gastao@gmail.com"[0m
 [AgentState] Ô£à email = "gastao@gmail.com"
 [33m  ­ƒôè Vari├íveis atuais:[0m
-[0m     nome: (n├úo definido)[0m
+[0m     nome: Gast├úo[0m
 [0m     email: gastao@gmail.com[0m
 [0m     data: 29/12[0m
 [0m     hora: 16:00[0m
 [1m
   ­ƒÄ» Verifica├º├úo Final:[0m
-[31m  ÔØî Nome deveria ser "Gast├úo"[0m
-[33m     Esperado: "Gast├úo"[0m
-[33m     Recebido: null[0m
+[32m  Ô£à Nome = "Gast├úo" (n├úo foi substitu├¡do por "segunda")[0m
 [32m  Ô£à Data = "29/12" (segunda-feira)[0m
 [32m  Ô£à Hor├írio = "16:00"[0m
 [32m  Ô£à Email = "gastao@gmail.com"[0m
@@ -137,8 +134,8 @@
 [36mÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü[0m
 [1m  RESUMO FINAL[0m
 [36mÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöüÔöü[0m
-[31m
-  Total: 41 testes passaram, 1 falharam[0m
-[33m
-  ÔÜá´©Å Alguns testes falharam. Verifique os detalhes acima.[0m
+[32m
+  Total: 42 testes passaram, 0 falharam[0m
+[32m
+  ­ƒÄë TODOS OS TESTES PASSARAM![0m
 

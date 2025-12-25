@@ -169,18 +169,38 @@ export function validateTime(value: string): { valid: boolean; reason?: string; 
     let hours: number | null = null;
     let minutes: string = '00';
 
-    // Padrão: "as 16", "às 10"
+    // Padrão: "as 16", "às 10", "as 10:30"
     const asMatch = value.match(/^[aàá]s?\s*(\d{1,2})(?:[h:](\d{2}))?$/i);
     if (asMatch) {
         hours = parseInt(asMatch[1]);
         minutes = asMatch[2] || '00';
     }
 
-    // Padrão: "16h", "10:00", "10h30"
-    const timeMatch = value.match(/^(\d{1,2})(?:[h:](\d{2}))?$/i);
-    if (!hours && timeMatch) {
-        hours = parseInt(timeMatch[1]);
-        minutes = timeMatch[2] || '00';
+    // Padrão: "16h", "14h", "10h" (SEM minutos)
+    if (hours === null) {
+        const hourOnlyMatch = value.match(/^(\d{1,2})h$/i);
+        if (hourOnlyMatch) {
+            hours = parseInt(hourOnlyMatch[1]);
+            minutes = '00';
+        }
+    }
+
+    // Padrão: "10:00", "10h30", "16h45" (COM minutos)
+    if (hours === null) {
+        const timeMatch = value.match(/^(\d{1,2})[h:](\d{2})$/i);
+        if (timeMatch) {
+            hours = parseInt(timeMatch[1]);
+            minutes = timeMatch[2];
+        }
+    }
+
+    // Padrão: número puro "16", "10"
+    if (hours === null) {
+        const pureNumber = value.match(/^(\d{1,2})$/);
+        if (pureNumber) {
+            hours = parseInt(pureNumber[1]);
+            minutes = '00';
+        }
     }
 
     if (hours === null) {
