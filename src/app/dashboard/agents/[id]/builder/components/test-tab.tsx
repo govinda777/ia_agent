@@ -237,6 +237,18 @@ export function TestTab() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Indicador de aguardando mais mensagens (debounce) */}
+                        {isTyping && !isLoading && (
+                            <div className="flex gap-3 ml-auto max-w-[80%] flex-row-reverse">
+                                <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-primary/50 text-primary-foreground">
+                                    <UserIcon className="h-4 w-4" />
+                                </div>
+                                <div className="bg-primary/50 text-primary-foreground p-3 rounded-lg text-xs italic">
+                                    ⏳ Aguardando... (envie mais ou espere 1.5s)
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
 
