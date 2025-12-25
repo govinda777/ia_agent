@@ -315,25 +315,40 @@ export class StageMachine {
         const timePatterns = [
             /(\d{1,2})[:h](\d{2})/i,  // 10:00, 10h30
             /(\d{1,2})\s*h(?:oras?)?/i,  // 10h, 10 horas
-            /às?\s+(\d{1,2})(?:[:h](\d{2}))?/i,  // às 10, as 10:30
+            /[aà]s?\s+(\d{1,2})(?:[:h](\d{2}))?/i,  // às 10, as 10:30, À 16
             /(\d{1,2})\s+(?:da\s+)?(manhã|manha|tarde|noite)/i,  // 10 da manhã
         ];
-        for (const pattern of timePatterns) {
-            const match = userMessage.match(pattern);
-            if (match && match[1]) {
-                let hours = parseInt(match[1]);
-                const minutes = match[2] || '00';
-                // Ajustar para período (manhã/tarde/noite)
-                if (match[3]) {
-                    const periodo = match[3].toLowerCase();
-                    if ((periodo === 'tarde') && hours < 12) hours += 12;
-                    if ((periodo === 'noite') && hours < 18) hours += 12;
-                }
-                // Validar horário comercial (6h-22h)
-                if (hours >= 6 && hours <= 22) {
-                    extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
-                    console.log(`[StageMachine] 🕐 Horário extraído diretamente: ${extractedFromMessage['horario_reuniao']}`);
-                    break;
+        
+        // FALLBACK ESPECIAL: Se mensagem é "as XX" ou "às XX" 
+        const asTimeMatch = userMessage.match(/^[aàá]s?\s*(\d{1,2})(?:[h:](\d{2}))?$/i);
+        if (asTimeMatch && asTimeMatch[1]) {
+            const hours = parseInt(asTimeMatch[1]);
+            const minutes = asTimeMatch[2] || '00';
+            if (hours >= 6 && hours <= 22) {
+                extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
+                console.log(`[StageMachine] 🕐 Horário 'as XX' extraído: ${extractedFromMessage['horario_reuniao']}`);
+            }
+        }
+        
+        // Se não extraiu com fallback, tentar patterns normais
+        if (!extractedFromMessage['horario_reuniao']) {
+            for (const pattern of timePatterns) {
+                const match = userMessage.match(pattern);
+                if (match && match[1]) {
+                    let hours = parseInt(match[1]);
+                    const minutes = match[2] || '00';
+                    // Ajustar para período (manhã/tarde/noite)
+                    if (match[3]) {
+                        const periodo = match[3].toLowerCase();
+                        if ((periodo === 'tarde') && hours < 12) hours += 12;
+                        if ((periodo === 'noite') && hours < 18) hours += 12;
+                    }
+                    // Validar horário comercial (6h-22h)
+                    if (hours >= 6 && hours <= 22) {
+                        extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
+                        console.log(`[StageMachine] 🕐 Horário extraído: ${extractedFromMessage['horario_reuniao']}`);
+                        break;
+                    }
                 }
             }
         }
