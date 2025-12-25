@@ -205,10 +205,48 @@ export class StageMachine {
         }
 
         // Detectar nome simples (mensagem curta, provavelmente só o nome)
-        // CORREÇÃO: Não considerar email como nome!
+        // CORREÇÃO DEFINITIVA: Lista de palavras que NÃO são nomes
+        const blockedAsName = [
+            // Dias da semana (com e sem acento)
+            'segunda', 'terça', 'terca', 'quarta', 'quinta', 'sexta', 'sábado', 'sabado', 'domingo',
+            'segunda-feira', 'terça-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira',
+            // Horários e datas
+            'hoje', 'amanhã', 'amanha', 'manhã', 'manha', 'tarde', 'noite',
+            // Confirmações
+            'sim', 'não', 'nao', 'ok', 'certo', 'beleza', 'blz', 'fechado', 'combinado', 'perfeito', 'ótimo', 'otimo',
+            // Números/horas comuns
+            'as', 'às', 'hora', 'horas', 'dia', 'dias',
+            // Outras palavras comuns que não são nomes
+            'pode', 'ser', 'que', 'para', 'com', 'está', 'esta', 'isso', 'isso mesmo',
+        ];
+
+        // Normalizar mensagem para comparação (remove acentos)
+        const normalizeText = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        const normalizedMessage = normalizeText(lowerMessage);
+        const normalizedBlocked = blockedAsName.map(w => normalizeText(w));
+
         const isEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i.test(userMessage);
-        if (userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ') && !isEmail) {
+        const isBlockedWord = normalizedBlocked.includes(normalizedMessage);
+        const isNumber = /^\d+$/.test(userMessage.trim());
+        const isTimeFormat = /^\d{1,2}[h:]?\d{0,2}$/.test(userMessage.trim()); // "16", "10h", "10:00"
+
+        // DEBUG: Log para entender por que bloqueio pode falhar
+        console.log(`[StageMachine] 🔍 Verificando nome: msg="${userMessage}", normalized="${normalizedMessage}", isBlocked=${isBlockedWord}, isNumber=${isNumber}, isTime=${isTimeFormat}`);
+
+        // REGRA: Só extrai como nome se:
+        // 1. NÃO já existe um nome válido
+        // 2. NÃO é email
+        // 3. NÃO é palavra bloqueada
+        // 4. NÃO é número/horário
+        // 5. É curto e sem espaço (provavelmente só o nome)
+        const hasExistingName = existingVars.nome && String(existingVars.nome).trim() !== '';
+        if (!hasExistingName && userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ') && !isEmail && !isBlockedWord && !isNumber && !isTimeFormat) {
             extractedFromMessage['nome'] = userMessage.trim();
+            console.log(`[StageMachine] 👤 Nome extraído: ${extractedFromMessage['nome']}`);
+        } else if (isBlockedWord) {
+            console.log(`[StageMachine] 🚫 Bloqueado como nome: "${userMessage}" (é palavra reservada)`);
+        } else if (hasExistingName) {
+            console.log(`[StageMachine] 🛡️ Nome existente protegido: "${existingVars.nome}"`);
         }
 
         // Detectar DATA diretamente da mensagem (EXPANDIDO para mais formatos)
