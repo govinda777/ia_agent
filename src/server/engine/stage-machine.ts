@@ -191,105 +191,67 @@ export class StageMachine {
         // Extrair variáveis da mensagem atual de forma simples
         const extractedFromMessage: Record<string, any> = {};
 
-        // Detectar área/nicho de atuação
-        const areaPatterns = [
-            /(?:clínica|clinica|consultório|loja|empresa|negócio|trabalho com|área|nicho|segmento|setor)[:\s]+(.+)/i,
-            /(?:sou|tenho|trabalho em|atuo com|meu negócio é)[:\s]*(?:uma?\s+)?(.+)/i,
-        ];
-        for (const pattern of areaPatterns) {
-            const match = userMessage.match(pattern);
-            if (match && match[1]) {
-                extractedFromMessage['area'] = match[1].trim();
-                break;
-            }
-        }
+        // ════════════════════════════════════════════════════════════════════
+        // REFATORAÇÃO CRÍTICA: Ordem correta de extração
+        // 1. DATA/HORA primeiro (prioridade máxima)
+        // 2. Marcar mensagem como "consumida" se foi data/hora
+        // 3. Só então tentar extrair NOME (se não foi consumida)
+        // ════════════════════════════════════════════════════════════════════
 
-        // Detectar nome simples (mensagem curta, provavelmente só o nome)
-        // CORREÇÃO DEFINITIVA: Lista de palavras que NÃO são nomes
-        const blockedAsName = [
-            // Dias da semana (com e sem acento)
-            'segunda', 'terça', 'terca', 'quarta', 'quinta', 'sexta', 'sábado', 'sabado', 'domingo',
-            'segunda-feira', 'terça-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira',
-            // Horários e datas
-            'hoje', 'amanhã', 'amanha', 'manhã', 'manha', 'tarde', 'noite',
-            // Confirmações
-            'sim', 'não', 'nao', 'ok', 'certo', 'beleza', 'blz', 'fechado', 'combinado', 'perfeito', 'ótimo', 'otimo',
-            // Números/horas comuns
-            'as', 'às', 'hora', 'horas', 'dia', 'dias',
-            // Outras palavras comuns que não são nomes
-            'pode', 'ser', 'que', 'para', 'com', 'está', 'esta', 'isso', 'isso mesmo',
-        ];
+        let messageConsumedAsDateTime = false; // Flag para prevenir extração dupla
+        const now = new Date();
 
         // Normalizar mensagem para comparação (remove acentos)
         const normalizeText = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
         const normalizedMessage = normalizeText(lowerMessage);
-        const normalizedBlocked = blockedAsName.map(w => normalizeText(w));
 
-        const isEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i.test(userMessage);
-        const isBlockedWord = normalizedBlocked.includes(normalizedMessage);
-        const isNumber = /^\d+$/.test(userMessage.trim());
-        const isTimeFormat = /^\d{1,2}[h:]?\d{0,2}$/.test(userMessage.trim()); // "16", "10h", "10:00"
+        // ════════════════════════════════════════════════════════════════════
+        // PASSO 1: EXTRAIR DATA (PRIMEIRO!)
+        // ════════════════════════════════════════════════════════════════════
 
-        // DEBUG: Log para entender por que bloqueio pode falhar
-        console.log(`[StageMachine] 🔍 Verificando nome: msg="${userMessage}", normalized="${normalizedMessage}", isBlocked=${isBlockedWord}, isNumber=${isNumber}, isTime=${isTimeFormat}`);
-
-        // REGRA: Só extrai como nome se:
-        // 1. NÃO já existe um nome válido
-        // 2. NÃO é email
-        // 3. NÃO é palavra bloqueada
-        // 4. NÃO é número/horário
-        // 5. É curto e sem espaço (provavelmente só o nome)
-        const hasExistingName = existingVars.nome && String(existingVars.nome).trim() !== '';
-        if (!hasExistingName && userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ') && !isEmail && !isBlockedWord && !isNumber && !isTimeFormat) {
-            extractedFromMessage['nome'] = userMessage.trim();
-            console.log(`[StageMachine] 👤 Nome extraído: ${extractedFromMessage['nome']}`);
-        } else if (isBlockedWord) {
-            console.log(`[StageMachine] 🚫 Bloqueado como nome: "${userMessage}" (é palavra reservada)`);
-        } else if (hasExistingName) {
-            console.log(`[StageMachine] 🛡️ Nome existente protegido: "${existingVars.nome}"`);
-        }
-
-        // Detectar DATA diretamente da mensagem (EXPANDIDO para mais formatos)
-        const now = new Date();
-        const datePatterns = [
-            /(\d{1,2})\s*[\/\-]\s*(\d{1,2})/,  // 22/12 ou 22-12
-            /dia\s+(\d{1,2})(?:\s+de\s+(\w+))?/i,  // dia 22, dia 22 de dezembro
-            /(\d{1,2})\s+de\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i,
-        ];
-
-        // Detectar dias da semana (segunda, terça, etc.)
+        // Lista de palavras que são datas/dias da semana
         const dayNames: Record<string, number> = {
             'domingo': 0, 'segunda': 1, 'segunda-feira': 1, 'terça': 2, 'terça-feira': 2, 'terca': 2,
             'quarta': 3, 'quarta-feira': 3, 'quinta': 4, 'quinta-feira': 4,
             'sexta': 5, 'sexta-feira': 5, 'sábado': 6, 'sabado': 6
         };
 
-        // Detectar "amanhã", "hoje", "próxima segunda", etc.
+        // Detectar "amanhã", "hoje"
         if (lowerMessage.includes('amanhã') || lowerMessage.includes('amanha')) {
             const tomorrow = new Date(now);
             tomorrow.setDate(now.getDate() + 1);
             extractedFromMessage['data_reuniao'] = `${tomorrow.getDate().toString().padStart(2, '0')}/${(tomorrow.getMonth() + 1).toString().padStart(2, '0')}`;
+            messageConsumedAsDateTime = true;
             console.log(`[StageMachine] 📅 Data 'amanhã' detectada: ${extractedFromMessage['data_reuniao']}`);
         } else if (lowerMessage.includes('hoje')) {
             extractedFromMessage['data_reuniao'] = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            messageConsumedAsDateTime = true;
             console.log(`[StageMachine] 📅 Data 'hoje' detectada: ${extractedFromMessage['data_reuniao']}`);
         } else {
-            // Detectar dia da semana
+            // Detectar dia da semana (segunda, terça, etc.)
             for (const [dayName, dayIndex] of Object.entries(dayNames)) {
-                if (lowerMessage.includes(dayName)) {
+                const normalizedDayName = normalizeText(dayName);
+                if (normalizedMessage === normalizedDayName || normalizedMessage.includes(normalizedDayName)) {
                     const targetDate = new Date(now);
                     const currentDay = now.getDay();
                     let daysUntil = dayIndex - currentDay;
                     if (daysUntil <= 0) daysUntil += 7; // Próxima semana
                     targetDate.setDate(now.getDate() + daysUntil);
                     extractedFromMessage['data_reuniao'] = `${targetDate.getDate().toString().padStart(2, '0')}/${(targetDate.getMonth() + 1).toString().padStart(2, '0')}`;
-                    console.log(`[StageMachine] 📅 Data '${dayName}' detectada: ${extractedFromMessage['data_reuniao']}`);
+                    messageConsumedAsDateTime = true; // CRÍTICO: Marcar como consumida
+                    console.log(`[StageMachine] 📅 Data '${dayName}' detectada: ${extractedFromMessage['data_reuniao']} (mensagem consumida como data)`);
                     break;
                 }
             }
         }
 
-        // Se não detectou por palavras, tentar padrões numéricos
+        // Se não detectou por palavras, tentar padrões numéricos de data
+        const datePatterns = [
+            /(\d{1,2})\s*[\/\-]\s*(\d{1,2})/,  // 22/12 ou 22-12
+            /dia\s+(\d{1,2})(?:\s+de\s+(\w+))?/i,  // dia 22, dia 22 de dezembro
+            /(\d{1,2})\s+de\s+(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i,
+        ];
+
         if (!extractedFromMessage['data_reuniao']) {
             for (const pattern of datePatterns) {
                 const match = userMessage.match(pattern);
@@ -305,20 +267,24 @@ export class StageMachine {
                         month = monthNames[month.toLowerCase()] || String(now.getMonth() + 1).padStart(2, '0');
                     }
                     extractedFromMessage['data_reuniao'] = `${day}/${month || String(now.getMonth() + 1).padStart(2, '0')}`;
+                    messageConsumedAsDateTime = true;
                     console.log(`[StageMachine] 📅 Data extraída diretamente: ${extractedFromMessage['data_reuniao']}`);
                     break;
                 }
             }
         }
 
-        // Detectar HORÁRIO diretamente da mensagem (EXPANDIDO)
+        // ════════════════════════════════════════════════════════════════════
+        // PASSO 2: EXTRAIR HORÁRIO
+        // ════════════════════════════════════════════════════════════════════
+
         const timePatterns = [
             /(\d{1,2})[:h](\d{2})/i,  // 10:00, 10h30
             /(\d{1,2})\s*h(?:oras?)?/i,  // 10h, 10 horas
             /[aà]s?\s+(\d{1,2})(?:[:h](\d{2}))?/i,  // às 10, as 10:30, À 16
             /(\d{1,2})\s+(?:da\s+)?(manhã|manha|tarde|noite)/i,  // 10 da manhã
         ];
-        
+
         // FALLBACK ESPECIAL: Se mensagem é "as XX" ou "às XX" 
         const asTimeMatch = userMessage.match(/^[aàá]s?\s*(\d{1,2})(?:[h:](\d{2}))?$/i);
         if (asTimeMatch && asTimeMatch[1]) {
@@ -326,10 +292,11 @@ export class StageMachine {
             const minutes = asTimeMatch[2] || '00';
             if (hours >= 6 && hours <= 22) {
                 extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
+                messageConsumedAsDateTime = true;
                 console.log(`[StageMachine] 🕐 Horário 'as XX' extraído: ${extractedFromMessage['horario_reuniao']}`);
             }
         }
-        
+
         // Se não extraiu com fallback, tentar patterns normais
         if (!extractedFromMessage['horario_reuniao']) {
             for (const pattern of timePatterns) {
@@ -346,6 +313,7 @@ export class StageMachine {
                     // Validar horário comercial (6h-22h)
                     if (hours >= 6 && hours <= 22) {
                         extractedFromMessage['horario_reuniao'] = `${hours}:${minutes}`;
+                        messageConsumedAsDateTime = true;
                         console.log(`[StageMachine] 🕐 Horário extraído: ${extractedFromMessage['horario_reuniao']}`);
                         break;
                     }
@@ -360,17 +328,86 @@ export class StageMachine {
             // Se entre 6-22, provavelmente é horário
             if (num >= 6 && num <= 22 && !extractedFromMessage['horario_reuniao']) {
                 extractedFromMessage['horario_reuniao'] = `${num}:00`;
+                messageConsumedAsDateTime = true;
                 console.log(`[StageMachine] 🕐 Número interpretado como horário: ${num}:00`);
             }
             // Se entre 1-31, pode ser dia do mês
             if (num >= 1 && num <= 31 && !extractedFromMessage['data_reuniao']) {
                 const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
                 extractedFromMessage['data_reuniao'] = `${num.toString().padStart(2, '0')}/${currentMonth}`;
+                messageConsumedAsDateTime = true;
                 console.log(`[StageMachine] 📅 Número interpretado como dia: ${extractedFromMessage['data_reuniao']}`);
             }
         }
 
-        // Detectar EMAIL diretamente da mensagem
+        // ════════════════════════════════════════════════════════════════════
+        // PASSO 3: EXTRAIR ÁREA/NICHO (pode coexistir com data/hora)
+        // ════════════════════════════════════════════════════════════════════
+
+        const areaPatterns = [
+            /(?:clínica|clinica|consultório|loja|empresa|negócio|trabalho com|área|nicho|segmento|setor)[:\s]+(.+)/i,
+            /(?:sou|tenho|trabalho em|atuo com|meu negócio é)[:\s]*(?:uma?\s+)?(.+)/i,
+        ];
+        for (const pattern of areaPatterns) {
+            const match = userMessage.match(pattern);
+            if (match && match[1]) {
+                extractedFromMessage['area'] = match[1].trim();
+                break;
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // PASSO 4: EXTRAIR NOME (SOMENTE SE MENSAGEM NÃO FOI CONSUMIDA)
+        // ════════════════════════════════════════════════════════════════════
+
+        // Lista de palavras que NÃO são nomes
+        const blockedAsName = [
+            // Dias da semana (com e sem acento)
+            'segunda', 'terça', 'terca', 'quarta', 'quinta', 'sexta', 'sábado', 'sabado', 'domingo',
+            'segunda-feira', 'terça-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira',
+            // Horários e datas
+            'hoje', 'amanhã', 'amanha', 'manhã', 'manha', 'tarde', 'noite',
+            // Confirmações
+            'sim', 'não', 'nao', 'ok', 'certo', 'beleza', 'blz', 'fechado', 'combinado', 'perfeito', 'ótimo', 'otimo',
+            // Números/horas comuns
+            'as', 'às', 'hora', 'horas', 'dia', 'dias',
+            // Outras palavras comuns que não são nomes
+            'pode', 'ser', 'que', 'para', 'com', 'está', 'esta', 'isso', 'isso mesmo',
+        ];
+
+        const normalizedBlocked = blockedAsName.map(w => normalizeText(w));
+        const isEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i.test(userMessage);
+        const isBlockedWord = normalizedBlocked.includes(normalizedMessage);
+        const isNumber = /^\d+$/.test(userMessage.trim());
+        const isTimeFormat = /^\d{1,2}[h:]?\d{0,2}$/.test(userMessage.trim());
+
+        // DEBUG: Log para entender verificação de nome
+        console.log(`[StageMachine] 🔍 Verificando nome: msg="${userMessage}", consumed=${messageConsumedAsDateTime}, isBlocked=${isBlockedWord}, isNumber=${isNumber}, isTime=${isTimeFormat}`);
+
+        // REGRA DEFINITIVA: Só extrai como nome se:
+        // 1. Mensagem NÃO foi consumida como data/hora
+        // 2. NÃO já existe um nome válido
+        // 3. NÃO é email
+        // 4. NÃO é palavra bloqueada
+        // 5. NÃO é número/horário
+        // 6. É curto e sem espaço (provavelmente só o nome)
+        const hasExistingName = existingVars.nome && String(existingVars.nome).trim() !== '';
+
+        if (!messageConsumedAsDateTime && !hasExistingName && userMessage.length < 30 && !userMessage.includes('?') && !lowerMessage.includes(' ') && !isEmail && !isBlockedWord && !isNumber && !isTimeFormat) {
+            extractedFromMessage['nome'] = userMessage.trim();
+            console.log(`[StageMachine] 👤 Nome extraído: ${extractedFromMessage['nome']}`);
+        } else if (messageConsumedAsDateTime) {
+            console.log(`[StageMachine] 🚫 Mensagem consumida como data/hora, NÃO será extraída como nome`);
+        } else if (isBlockedWord) {
+            console.log(`[StageMachine] 🚫 Bloqueado como nome: "${userMessage}" (é palavra reservada)`);
+        } else if (hasExistingName) {
+            console.log(`[StageMachine] 🛡️ Nome existente protegido: "${existingVars.nome}"`);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // PASSO 5: EXTRAIR EMAIL
+        // ════════════════════════════════════════════════════════════════════
+
         const emailMatch = userMessage.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i);
         if (emailMatch) {
             extractedFromMessage['email'] = emailMatch[0].toLowerCase();
