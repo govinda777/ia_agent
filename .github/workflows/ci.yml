@@ -4,10 +4,12 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://user:password@host.neon.tech/database?sslmode=require"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
       - run: npm install
       - run: npm run build
       - run: npm run lint
-      - run: npm run test  # Vitest will run here
+      - run: npm run test
