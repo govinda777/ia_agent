@@ -8,7 +8,6 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint . --cache --cache-location=.eslintcache --max-warnings=0",
-        "lint:ci": "eslint src --cache --cache-location=.eslintcache --max-warnings=0",
         "lint:fix": "eslint . --fix",
         "lint:check": "eslint .",
         "db:generate": "drizzle-kit generate",
