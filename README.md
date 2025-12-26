@@ -1,11 +1,11 @@
-# IA Agent
+# AI Agent
 
-Plataforma de automação de atendimento via WhatsApp com agentes de IA configuráveis.
+A platform for automating customer service on WhatsApp with configurable AI agents.
 
-## 🚀 Stack Tecnológica
+## 🚀 Tech Stack
 
 - **Framework:** Next.js 15 (App Router)
-- **Linguagem:** TypeScript (Strict Mode)
+- **Language:** TypeScript (Strict Mode)
 - **AI Engine:** Vercel AI SDK Core + OpenAI
 - **Database:** Neon (Serverless Postgres) + Drizzle ORM
 - **Deployment:** Vercel
@@ -13,84 +13,84 @@ Plataforma de automação de atendimento via WhatsApp com agentes de IA configur
 - **Styling:** Tailwind CSS 4
 - **Icons:** Lucide React
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
 /src
 ├── /app                    # Next.js App Router
-│   ├── /dashboard          # Painel protegido
-│   ├── /api                # API Routes
-│   │   ├── /agents         # CRUD de agentes
-│   │   ├── /threads        # Gerenciamento de conversas
-│   │   └── /messages       # Mensagens e chat
-│   └── page.tsx            # Landing page
+│   ├── /dashboard          # Protected dashboard
+│   └── /api                # API Routes
 ├── /components
 │   ├── /ui                 # Shadcn primitives
 │   ├── /layout             # Sidebar, Header
-│   └── /features           # Componentes por funcionalidade
+│   └── /features           # Feature-specific components
 ├── /lib
 │   ├── /ai                 # Vercel AI SDK config
-│   ├── /db                 # Drizzle Client
-│   └── utils.ts            # Helpers
+│   ├── /agents             # Agent orchestration
+│   ├── /actions            # Server Actions
+│   ├── /integrations       # External API integrations
+│   └── /utils              # Utility functions
 ├── /db
-│   └── /schema             # Schemas do banco de dados
-│       ├── chat.ts         # Threads, messages
-│       ├── agents.ts       # Configuração de agentes
-│       └── users.ts        # Usuários
-└── drizzle.config.ts       # Configuração do Drizzle ORM
+│   └── /schema.ts          # Database schema
+├── /stores
+│   └── *.ts                # Zustand stores
+├── /types
+│   └── index.ts            # Global TypeScript types
+└── /config
+    └── constants.ts        # Application constants
 ```
 
-## 🛠️ Setup Local
+## 🛠️ Local Setup
 
-### 1. Clonar repositório
+### 1. Clone repository
 
 ```bash
 git clone git@github.com:drtrafego/ia_agent.git
 cd ia_agent
 ```
 
-### 2. Instalar dependências
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configurar variáveis de ambiente
+### 3. Configure environment variables
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Create a `.env.local` file in the project root:
 
 ```env
-# Database (Obrigatório)
+# Database (Required)
 DATABASE_URL=postgresql://user:password@host.neon.tech/database?sslmode=require
 
-# OpenAI (Obrigatório)
+# OpenAI (Required)
 OPENAI_API_KEY=sk-proj-...
 
-# Google Calendar (Opcional)
+# Google Calendar (Optional)
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REFRESH_TOKEN=
 
-# Default User ID (Obrigatório - ver seção "Setup do Banco de Dados")
-DEFAULT_USER_ID=uuid-do-usuario-padrao
+# Default User ID (Required - see "Database Setup" section)
+DEFAULT_USER_ID=uuid-of-default-user
 
 # NextAuth
 NEXTAUTH_URL=http://localhost:3000
 ```
 
-> ⚠️ **IMPORTANTE**: Nunca commite o arquivo `.env.local`! Ele já está no `.gitignore`.
+> ⚠️ **IMPORTANT**: Never commit the `.env.local` file! It is already in the `.gitignore`.
 
-### 4. Setup do Banco de Dados
+### 4. Database Setup
 
-#### 4.1. Criar as tabelas
+#### 4.1. Create tables
 
 ```bash
 npx dotenv -e .env.local -- npx drizzle-kit push
 ```
 
-#### 4.2. Criar usuário padrão
+#### 4.2. Create default user
 
-Acesse o [Neon Console](https://console.neon.tech) → SQL Editor e execute:
+Access the [Neon Console](https://console.neon.tech) → SQL Editor and run:
 
 ```sql
 INSERT INTO users (name, email, created_at, updated_at) 
@@ -99,142 +99,142 @@ ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
 RETURNING id;
 ```
 
-Copie o `id` retornado e adicione ao `.env.local`:
+Copy the returned `id` and add it to `.env.local`:
 
 ```env
-DEFAULT_USER_ID=<id-copiado>
+DEFAULT_USER_ID=<copied-id>
 ```
 
-### 5. Rodar em desenvolvimento
+### 5. Run in development
 
 ```bash
 npm run dev
 ```
 
-Acesse [http://localhost:3000](http://localhost:3000)
+Access [http://localhost:3000](http://localhost:3000)
 
-## 🌐 Deploy no Vercel
+## 🌐 Deploy to Vercel
 
-### 1. Push para GitHub
+### 1. Push to GitHub
 
 ```bash
 git add .
-git commit -m "sua mensagem"
+git commit -m "your message"
 git push origin main
 ```
 
-### 2. Conectar no Vercel
+### 2. Connect to Vercel
 
-1. Acesse: https://vercel.com/new
-2. Selecione o repositório `ia_agent`
+1. Go to: https://vercel.com/new
+2. Select the `ia_agent` repository
 3. Configure:
    - **Framework Preset**: Next.js
-   - **Root Directory**: `./` (deixe em branco)
+   - **Root Directory**: `./` (leave blank)
    - **Build Command**: `next build`
 
-### 3. Adicionar Variáveis de Ambiente
+### 3. Add Environment Variables
 
-Em **Environment Variables**, adicione:
+In **Environment Variables**, add:
 
-| Name | Value | Onde obter |
+| Name | Value | Where to get |
 |------|-------|------------|
 | `DATABASE_URL` | `postgresql://...` | [Neon Console](https://console.neon.tech) |
 | `OPENAI_API_KEY` | `sk-proj-...` | [OpenAI Platform](https://platform.openai.com/api-keys) |
-| `DEFAULT_USER_ID` | `uuid-...` | Execute SQL acima no Neon |
-| `GOOGLE_CLIENT_ID` | *(opcional)* | [Google Cloud Console](https://console.cloud.google.com) |
-| `GOOGLE_CLIENT_SECRET` | *(opcional)* | Google Cloud Console |
+| `DEFAULT_USER_ID` | `uuid-...` | Run the SQL above in Neon |
+| `GOOGLE_CLIENT_ID` | *(optional)* | [Google Cloud Console](https://console.cloud.google.com) |
+| `GOOGLE_CLIENT_SECRET` | *(optional)* | Google Cloud Console |
 
 ### 4. Deploy
 
-Clique em **Deploy** e aguarde o build completar.
+Click **Deploy** and wait for the build to complete.
 
-### 5. Criar Tabelas no Banco (Primeira vez)
+### 5. Create Tables in Database (First time)
 
-Após o primeiro deploy, rode localmente:
+After the first deploy, run locally:
 
 ```bash
 npx dotenv -e .env.local -- npx drizzle-kit push
 ```
 
-Ou execute os SQLs manualmente no Neon Console.
+Or run the SQL manually in the Neon Console.
 
-## 📊 Banco de Dados
+## 📊 Database
 
-### Estrutura das Tabelas
+### Table Structure
 
 #### `agents`
-Configuração dos agentes de IA
+Configuration of AI agents
 - `id`, `name`, `description`, `system_prompt`
-- `model_config` (JSON: modelo, temperatura, etc)
-- `user_id` (vinculado ao usuário criador)
+- `model_config` (JSON: model, temperature, etc.)
+- `user_id` (linked to the creator user)
 
 #### `threads`
-Conversas/Sessões de chat
+Chat conversations/sessions
 - `id`, `agent_id`, `user_id`
 - `created_at`, `updated_at`
 
 #### `messages`
-Mensagens das conversas
+Conversation messages
 - `id`, `thread_id`, `role` (user/assistant)
 - `content`, `created_at`
 
 #### `users`
-Usuários do sistema
+System users
 - `id`, `name`, `email`
 
-### Gerenciar Banco de Dados
+### Manage Database
 
 ```bash
-# Ver dados (interface visual)
+# View data (visual interface)
 npm run db:studio
 
-# Gerar novas migrações
+# Generate new migrations
 npm run db:generate
 
-# Aplicar migrações
+# Apply migrations
 npm run db:push
 ```
 
-## 🔧 Scripts Disponíveis
+## 🔧 Available Scripts
 
-| Script | Descrição |
+| Script | Description |
 |--------|-----------|
-| `npm run dev` | Desenvolvimento (porta 3000) |
-| `npm run build` | Build de produção |
-| `npm run start` | Servidor de produção |
-| `npm run lint` | Executar ESLint |
-| `npm run db:generate` | Gerar migrações Drizzle |
-| `npm run db:push` | Aplicar migrações no banco |
-| `npm run db:studio` | Abrir Drizzle Studio (GUI) |
+| `npm run dev` | Development (port 3000) |
+| `npm run build` | Production build |
+| `npm run start` | Production server |
+| `npm run lint` | Run ESLint |
+| `npm run db:generate` | Generate Drizzle migrations |
+| `npm run db:push` | Apply migrations to the database |
+| `npm run db:studio` | Open Drizzle Studio (GUI) |
 
 ## 🐛 Troubleshooting
 
-### Erro: `relation "agents" does not exist`
-**Causa**: Tabelas não foram criadas no banco.  
-**Solução**: Rode `npx drizzle-kit push` (ver seção "Setup do Banco de Dados")
+### Error: `relation "agents" does not exist`
+**Cause**: Tables were not created in the database.
+**Solution**: Run `npx drizzle-kit push` (see "Database Setup" section)
 
-### Erro: `user_id violates not-null constraint`
-**Causa**: Variável `DEFAULT_USER_ID` não está configurada.  
-**Solução**: Crie usuário padrão no banco e adicione o ID ao `.env.local` / Vercel
+### Error: `user_id violates not-null constraint`
+**Cause**: `DEFAULT_USER_ID` variable is not configured.
+**Solution**: Create a default user in the database and add the ID to `.env.local` / Vercel
 
-### Erro: `DATABASE_URL is not defined`
-**Causa**: Arquivo `.env.local` não existe ou está mal configurado.  
-**Solução**: Crie o arquivo com as variáveis necessárias (ver seção "Setup Local")
+### Error: `DATABASE_URL is not defined`
+**Cause**: `.env.local` file does not exist or is misconfigured.
+**Solution**: Create the file with the necessary variables (see "Local Setup" section)
 
-### Push para GitHub bloqueado (GH013)
-**Causa**: GitHub detectou secrets (credenciais) no código.  
-**Solução**:
-- Nunca commite `.env.local` ou arquivos com credenciais reais
-- Use `.env.example` apenas com placeholders
-- Verifique se `.gitignore` inclui `.env.local`
+### Push to GitHub blocked (GH013)
+**Cause**: GitHub detected secrets (credentials) in the code.
+**Solution**:
+- Never commit `.env.local` or files with real credentials
+- Use `.env.example` with placeholders only
+- Make sure `.gitignore` includes `.env.local`
 
-## 🔐 Segurança
+## 🔐 Security
 
-- ✅ Todas as credenciais em variáveis de ambiente
-- ✅ `.env.local` no `.gitignore`
-- ✅ Nunca fazer commit de secrets no código
-- ✅ Use `.env.example` apenas com valores de exemplo
+- ✅ All credentials in environment variables
+- ✅ `.env.local` in `.gitignore`
+- ✅ Never commit secrets in the code
+- ✅ Use `.env.example` with example values only
 
 ## 📝 License
 
-Proprietary - Casal do Tráfego © 2024-2025
+Proprietary - Traffic Couple © 2024-2025
