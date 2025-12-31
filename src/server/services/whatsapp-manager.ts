@@ -10,7 +10,7 @@
  */
 
 import { db } from '@/lib/db';
-import { whatsappInstances, agents, users } from '@/db/schema';
+import { whatsappInstances, agents } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { BaileysService } from './baileys.service';
 import { sendWhatsAppMessage as sendMetaMessage } from './meta-whatsapp.service';
@@ -348,7 +348,7 @@ export async function sendMessage(
                 return { success: false, error: 'Credenciais não configuradas' };
             }
 
-            const credentials = JSON.parse(decryptCredential(instance.credentials));
+            JSON.parse(decryptCredential(instance.credentials));
 
             // Usar a função existente de meta-whatsapp.service
             // Note: Precisamos adaptar para usar as credenciais da instância

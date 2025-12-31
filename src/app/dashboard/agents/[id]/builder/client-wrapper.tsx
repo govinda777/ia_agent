@@ -17,6 +17,8 @@ interface Props {
     knowledgeBase: KnowledgeBaseItem[];
 }
 
+export type BuilderTab = 'personality' | 'brain' | 'stages' | 'integrations' | 'test';
+
 export function ClientBuilderWrapper({ agent, stages, knowledgeBase }: Props) {
     const {
         setAgent,
@@ -43,23 +45,23 @@ export function ClientBuilderWrapper({ agent, stages, knowledgeBase }: Props) {
                 {isLoading && <Loader2 className="animate-spin h-5 w-5 text-primary" />}
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as BuilderTab)} className="flex-1 flex flex-col overflow-hidden">
                 <div className="border-b px-6 bg-muted/30">
                     <TabsList className="bg-transparent h-12 p-0 gap-6">
                         <TabsTrigger value="personality" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-0 pb-2 h-full">
-                            🤖 Personalidade
+                            🤖 Personality
                         </TabsTrigger>
                         <TabsTrigger value="brain" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-0 pb-2 h-full">
-                            🧠 Cérebro (RAG)
+                            🧠 Brain (RAG)
                         </TabsTrigger>
                         <TabsTrigger value="stages" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-0 pb-2 h-full">
-                            🔄 Fluxo (Estágios)
+                            🔄 Flow (Stages)
                         </TabsTrigger>
                         <TabsTrigger value="integrations" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-0 pb-2 h-full">
-                            🔌 Integrações
+                            🔌 Integrations
                         </TabsTrigger>
                         <TabsTrigger value="test" className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none rounded-none px-0 pb-2 h-full ml-auto text-primary font-medium">
-                            💬 Testar Agente
+                            💬 Test Agent
                         </TabsTrigger>
                     </TabsList>
                 </div>

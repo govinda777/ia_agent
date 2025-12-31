@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { updateAgentAction } from '@/server/actions/agents';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Loader2, Save, CheckCircle2, Cpu, AlertTriangle } from 'lucide-react';
 import { AGENT_TYPES, getAgentPromptTemplate, type AgentType } from '@/lib/agent-prompts';
 
@@ -20,9 +20,9 @@ const LLM_PROVIDERS = {
         name: 'OpenAI',
         icon: '🤖',
         models: [
-            { id: 'gpt-4o', name: 'GPT-4o (Mais inteligente)' },
-            { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Rápido e econômico)' },
-            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (Contexto longo)' },
+            { id: 'gpt-4o', name: 'GPT-4o (Smarter)' },
+            { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Fast and economical)' },
+            { id: 'gpt-4-turbo', name: 'GPT-4 Turbo (Long context)' },
         ],
         envVar: 'OPENAI_API_KEY'
     },
@@ -30,8 +30,8 @@ const LLM_PROVIDERS = {
         name: 'Google Gemini',
         icon: '✨',
         models: [
-            { id: 'gemini-2.5-pro-preview-06-05', name: 'Gemini 2.5 Pro (Mais recente)' },
-            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Rápido)' },
+            { id: 'gemini-2.5-pro-preview-06-05', name: 'Gemini 2.5 Pro (Latest)' },
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Fast)' },
             { id: 'gemini-exp-1206', name: 'Gemini 3.0 Experimental' },
         ],
         envVar: 'GOOGLE_GENERATIVE_AI_API_KEY'
@@ -40,10 +40,10 @@ const LLM_PROVIDERS = {
         name: 'Anthropic Claude',
         icon: '🧠',
         models: [
-            { id: 'claude-sonnet-4-20250514', name: 'Claude 4.5 Sonnet (Mais recente)' },
-            { id: 'claude-opus-4-20250514', name: 'Claude 4.5 Opus (Mais poderoso)' },
-            { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Estável)' },
-            { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Mais rápido)' },
+            { id: 'claude-sonnet-4-20250514', name: 'Claude 4.5 Sonnet (Latest)' },
+            { id: 'claude-opus-4-20250514', name: 'Claude 4.5 Opus (Most powerful)' },
+            { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet (Stable)' },
+            { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku (Fastest)' },
         ],
         envVar: 'ANTHROPIC_API_KEY'
     }
@@ -55,22 +55,16 @@ export function PersonalityTab() {
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     // State for agent type change confirmation
-    const [hasInitialType, setHasInitialType] = useState(false);
     const [showTypeChangeDialog, setShowTypeChangeDialog] = useState(false);
     const [pendingTypeChange, setPendingTypeChange] = useState<AgentType | null>(null);
 
-    // Track if agent already had a type selected
-    useEffect(() => {
-        if (agent?.personality && agent.personality !== 'custom') {
-            setHasInitialType(true);
-        }
-    }, [agent?.id]);
-
     if (!agent) return null;
 
+    const hasInitialType = agent?.personality && agent.personality !== 'custom';
+
     // Extract provider and model from modelConfig
-    const currentProvider = (agent.modelConfig as any)?.provider || 'openai';
-    const currentModel = (agent.modelConfig as any)?.model || 'gpt-4o-mini';
+    const currentProvider = (agent.modelConfig as { provider: string })?.provider || 'openai';
+    const currentModel = (agent.modelConfig as { model: string })?.model || 'gpt-4o-mini';
 
     function handleProviderChange(provider: string) {
         const providerConfig = LLM_PROVIDERS[provider as keyof typeof LLM_PROVIDERS];
@@ -118,7 +112,6 @@ export function PersonalityTab() {
             } : {})
         });
 
-        setHasInitialType(true);
         setShowTypeChangeDialog(false);
         setPendingTypeChange(null);
     }
@@ -166,87 +159,87 @@ export function PersonalityTab() {
             {saveSuccess && (
                 <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5" />
-                    <span>Alterações salvas com sucesso!</span>
+                    <span>Changes saved successfully!</span>
                 </div>
             )}
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Identidade do Agente</CardTitle>
-                    <CardDescription>Defina como seu agente se apresenta para os usuários.</CardDescription>
+                    <CardTitle>Agent Identity</CardTitle>
+                    <CardDescription>Define how your agent introduces itself to users.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Nome Interno</Label>
+                            <Label>Internal Name</Label>
                             <Input
                                 value={agent.name}
                                 onChange={(e) => updateAgent({ name: e.target.value })}
-                                placeholder="Nome para identificação interna"
+                                placeholder="Name for internal identification"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Nome de Exibição (Chat)</Label>
+                            <Label>Display Name (Chat)</Label>
                             <Input
                                 value={agent.displayName || ''}
                                 onChange={(e) => updateAgent({ displayName: e.target.value })}
-                                placeholder="Como o agente se apresenta no chat"
+                                placeholder="How the agent introduces itself in the chat"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Tipo de Atendimento</Label>
+                        <Label>Service Type</Label>
                         <Select
                             value={agent.personality || 'custom'}
                             onValueChange={handleAgentTypeChange}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Escolha o tipo do agente" />
+                                <SelectValue placeholder="Choose the agent type" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="vendas">
                                     <div className="flex flex-col">
-                                        <span>💼 Agente de Vendas (Closer)</span>
-                                        <span className="text-xs text-muted-foreground">Vendedor consultivo de alta performance</span>
+                                        <span>💼 Sales Agent (Closer)</span>
+                                        <span className="text-xs text-muted-foreground">High-performance consultative seller</span>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="sdr">
                                     <div className="flex flex-col">
-                                        <span>🎯 SDR Qualificador de Leads</span>
-                                        <span className="text-xs text-muted-foreground">Qualificação estratégica para alto ticket</span>
+                                        <span>🎯 SDR Lead Qualifier</span>
+                                        <span className="text-xs text-muted-foreground">Strategic qualification for high-ticket sales</span>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="low_ticket">
                                     <div className="flex flex-col">
-                                        <span>⚡ Vendas Low Ticket</span>
-                                        <span className="text-xs text-muted-foreground">Vendas rápidas e diretas</span>
+                                        <span>⚡ Low Ticket Sales</span>
+                                        <span className="text-xs text-muted-foreground">Fast and direct sales</span>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="secretaria">
                                     <div className="flex flex-col">
-                                        <span>📅 Secretária + Agendamento</span>
-                                        <span className="text-xs text-muted-foreground">SDR + Secretária com demonstração</span>
+                                        <span>📅 Secretary + Scheduling</span>
+                                        <span className="text-xs text-muted-foreground">SDR + Secretary with demonstration</span>
                                     </div>
                                 </SelectItem>
                                 <SelectItem value="custom">
                                     <div className="flex flex-col">
-                                        <span>⚙️ Personalizado</span>
-                                        <span className="text-xs text-muted-foreground">Crie seu próprio prompt</span>
+                                        <span>⚙️ Custom</span>
+                                        <span className="text-xs text-muted-foreground">Create your own prompt</span>
                                     </div>
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                         {agent.personality && agent.personality !== 'custom' && (
                             <p className="text-xs text-muted-foreground">
-                                💡 O prompt pré-configurado foi carregado. Personalize os campos marcados com [PREENCHER].
+                                💡 The pre-configured prompt has been loaded. Customize the fields marked with [FILL].
                             </p>
                         )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Tom de Voz</Label>
+                            <Label>Tone of Voice</Label>
                             <Select
                                 value={agent.tone || 'friendly'}
                                 onValueChange={(v) => updateAgent({ tone: v })}
@@ -255,15 +248,15 @@ export function PersonalityTab() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="friendly">Amigável 😊</SelectItem>
-                                    <SelectItem value="professional">Profissional 👔</SelectItem>
-                                    <SelectItem value="enthusiastic">Entusiasta 🤩</SelectItem>
-                                    <SelectItem value="serious">Sério 😐</SelectItem>
+                                    <SelectItem value="friendly">Friendly 😊</SelectItem>
+                                    <SelectItem value="professional">Professional 👔</SelectItem>
+                                    <SelectItem value="enthusiastic">Enthusiastic 🤩</SelectItem>
+                                    <SelectItem value="serious">Serious 😐</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Idioma</Label>
+                            <Label>Language</Label>
                             <Select
                                 value={agent.language || 'pt-BR'}
                                 onValueChange={(v) => updateAgent({ language: v })}
@@ -272,9 +265,9 @@ export function PersonalityTab() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
+                                    <SelectItem value="pt-BR">🇧🇷 Portuguese (Brazil)</SelectItem>
                                     <SelectItem value="en-US">🇺🇸 English (US)</SelectItem>
-                                    <SelectItem value="es-ES">🇪🇸 Español</SelectItem>
+                                    <SelectItem value="es-ES">🇪🇸 Spanish</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -282,8 +275,8 @@ export function PersonalityTab() {
 
                     <div className="flex items-center justify-between border p-4 rounded-lg">
                         <div className="space-y-0.5">
-                            <Label>Usar Emojis</Label>
-                            <p className="text-sm text-muted-foreground">Permite o uso de emojis nas respostas.</p>
+                            <Label>Use Emojis</Label>
+                            <p className="text-sm text-muted-foreground">Allow the use of emojis in responses.</p>
                         </div>
                         <Switch
                             checked={agent.useEmojis ?? true}
@@ -292,11 +285,11 @@ export function PersonalityTab() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Descrição Interna</Label>
+                        <Label>Internal Description</Label>
                         <Textarea
                             value={agent.description || ''}
                             onChange={(e) => updateAgent({ description: e.target.value })}
-                            placeholder="Para que serve este agente? (não aparece no chat)"
+                            placeholder="What is this agent for? (does not appear in chat)"
                         />
                     </div>
                 </CardContent>
@@ -307,16 +300,16 @@ export function PersonalityTab() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Cpu className="h-5 w-5" />
-                        Modelo de IA (LLM)
+                        AI Model (LLM)
                     </CardTitle>
                     <CardDescription>
-                        Escolha o provedor e modelo de IA que o agente utilizará para gerar respostas.
+                        Choose the AI provider and model that the agent will use to generate responses.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Provedor</Label>
+                            <Label>Provider</Label>
                             <Select value={currentProvider} onValueChange={handleProviderChange}>
                                 <SelectTrigger>
                                     <SelectValue />
@@ -329,7 +322,7 @@ export function PersonalityTab() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Modelo</Label>
+                            <Label>Model</Label>
                             <Select value={currentModel} onValueChange={handleModelChange}>
                                 <SelectTrigger>
                                     <SelectValue />
@@ -346,7 +339,7 @@ export function PersonalityTab() {
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-lg text-sm">
                         <p className="text-muted-foreground">
-                            <strong>Variável de ambiente:</strong>{' '}
+                            <strong>Environment variable:</strong>{' '}
                             <code className="bg-slate-200 dark:bg-slate-700 px-1 rounded">
                                 {selectedProvider.envVar}
                             </code>
@@ -357,17 +350,17 @@ export function PersonalityTab() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Contexto da Empresa</CardTitle>
-                    <CardDescription>Informações sobre sua empresa que o agente utilizará.</CardDescription>
+                    <CardTitle>Company Context</CardTitle>
+                    <CardDescription>Information about your company that the agent will use.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Perfil da Empresa</Label>
+                        <Label>Company Profile</Label>
                         <Textarea
                             className="min-h-[120px]"
                             value={agent.companyProfile || ''}
                             onChange={(e) => updateAgent({ companyProfile: e.target.value })}
-                            placeholder="Descreva sua empresa, produtos/serviços, diferenciais, etc."
+                            placeholder="Describe your company, products/services, differentiators, etc."
                         />
                     </div>
                 </CardContent>
@@ -375,26 +368,26 @@ export function PersonalityTab() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Comportamento (Prompt)</CardTitle>
-                    <CardDescription>Instruções globais que o agente deve seguir sempre.</CardDescription>
+                    <CardTitle>Behavior (Prompt)</CardTitle>
+                    <CardDescription>Global instructions that the agent must always follow.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
-                        <Label>System Prompt Global</Label>
+                        <Label>Global System Prompt</Label>
                         <Textarea
                             className="min-h-[200px] font-mono text-sm"
                             value={agent.systemPrompt}
                             onChange={(e) => updateAgent({ systemPrompt: e.target.value })}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Este prompt será combinado com as instruções específicas de cada estágio.
+                            This prompt will be combined with the specific instructions of each stage.
                         </p>
                     </div>
 
                     <div className="flex items-center justify-between border p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
                         <div className="space-y-0.5">
-                            <Label>Agente Ativo</Label>
-                            <p className="text-sm text-muted-foreground">Desative para impedir novas interações.</p>
+                            <Label>Active Agent</Label>
+                            <p className="text-sm text-muted-foreground">Disable to prevent new interactions.</p>
                         </div>
                         <Switch
                             checked={agent.isActive}
@@ -407,7 +400,7 @@ export function PersonalityTab() {
             <div className="flex justify-end">
                 <Button onClick={handleSave} disabled={isSaving} size="lg">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Alterações
+                    Save Changes
                 </Button>
             </div>
 
@@ -417,17 +410,17 @@ export function PersonalityTab() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <AlertTriangle className="h-5 w-5 text-amber-500" />
-                            Confirmar Alteração de Tipo
+                            Confirm Type Change
                         </DialogTitle>
                         <DialogDescription>
-                            Você já tem um tipo de agente configurado. Ao mudar para
+                            You already have an agent type configured. By changing to
                             <strong> {pendingTypeChange && AGENT_TYPES[pendingTypeChange]?.label}</strong>,
-                            o System Prompt atual será substituído pelo template pré-configurado.
+                            the current System Prompt will be replaced with the pre-configured template.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm text-amber-800">
-                        <p><strong>⚠️ Atenção:</strong> Esta ação irá sobrescrever seu prompt atual.</p>
-                        <p className="mt-1">Você pode optar por manter seu prompt e apenas mudar o tipo.</p>
+                        <p><strong>⚠️ Attention:</strong> This action will overwrite your current prompt.</p>
+                        <p className="mt-1">You can choose to keep your prompt and just change the type.</p>
                     </div>
                     <DialogFooter className="flex gap-2 sm:gap-0">
                         <Button
@@ -440,10 +433,10 @@ export function PersonalityTab() {
                                 setPendingTypeChange(null);
                             }}
                         >
-                            Manter Meu Prompt
+                            Keep My Prompt
                         </Button>
                         <Button onClick={confirmTypeChangeWithPrompt}>
-                            Usar Novo Template
+                            Use New Template
                         </Button>
                     </DialogFooter>
                 </DialogContent>

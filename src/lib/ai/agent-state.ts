@@ -1,19 +1,19 @@
 /**
- * AgentState - Estado tipado do agente inspirado em LangChain
- * 
- * Baseado em: https://docs.langchain.com/oss/python/langchain/agents#memory
- * 
- * Fornece:
- * - Tipagem estrita para variáveis
- * - Validação automática
- * - Serialização/deserialização
- * - Factory functions para criar estados iniciais
+ * AgentState - Typed agent state inspired by LangChain
+ *
+ * Based on: https://docs.langchain.com/oss/python/langchain/agents#memory
+ *
+ * Provides:
+ * - Strict typing for variables
+ * - Automatic validation
+ * - Serialization/deserialization
+ * - Factory functions to create initial states
  */
 
 import { CoreMessage } from 'ai';
 
 // ════════════════════════════════════════════════════════════════════
-// TIPOS DE MENSAGENS (inspirado em LangChain Messages)
+// MESSAGE TYPES (inspired by LangChain Messages)
 // ════════════════════════════════════════════════════════════════════
 
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -23,49 +23,49 @@ export interface AgentMessage {
     role: MessageRole;
     content: string;
     timestamp: Date;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export interface ToolCall {
     id: string;
     name: string;
-    args: Record<string, any>;
+    args: Record<string, unknown>;
     result?: string;
     status: 'pending' | 'success' | 'error';
 }
 
 // ════════════════════════════════════════════════════════════════════
-// VARIÁVEIS TIPADAS COM VALIDAÇÃO
+// TYPED VARIABLES WITH VALIDATION
 // ════════════════════════════════════════════════════════════════════
 
 export interface AgentVariables {
-    nome: string | null;
+    name: string | null;
     email: string | null;
-    telefone: string | null;
+    phone: string | null;
     area: string | null;
-    desafio: string | null;
-    data_reuniao: string | null;
-    horario_reuniao: string | null;
+    challenge: string | null;
+    meeting_date: string | null;
+    meeting_time: string | null;
     [key: string]: string | null | undefined;
 }
 
 // ════════════════════════════════════════════════════════════════════
-// ESTADO COMPLETO DO AGENTE
+// COMPLETE AGENT STATE
 // ════════════════════════════════════════════════════════════════════
 
 export interface AgentState {
-    // Identificadores
+    // Identifiers
     threadId: string;
     agentId: string;
     userId?: string;
 
-    // Histórico de mensagens
+    // Message history
     messages: AgentMessage[];
 
-    // Variáveis extraídas
+    // Extracted variables
     variables: AgentVariables;
 
-    // Estado do fluxo
+    // Flow state
     currentStage: string;
     previousStage?: string;
 
@@ -79,104 +79,103 @@ export interface AgentState {
         summaryContent?: string;
     };
 
-    // Tool calls pendentes
+    // Pending tool calls
     pendingToolCalls: ToolCall[];
 }
 
 // ════════════════════════════════════════════════════════════════════
-// VALIDADORES DE VARIÁVEIS
+// VARIABLE VALIDATORS
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Normaliza texto removendo acentos e convertendo para minúsculas
+ * Normalizes text by removing accents and converting to lowercase
  */
 export function normalizeText(text: string): string {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
 /**
- * Lista de palavras que NÃO são nomes
+ * List of words that are NOT names
  */
 const BLOCKED_AS_NAME = new Set([
-    // Dias da semana
-    'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo',
-    'segunda-feira', 'terca-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira',
-    // Horários e datas
-    'hoje', 'amanha', 'manha', 'tarde', 'noite',
-    // Confirmações
-    'sim', 'nao', 'ok', 'certo', 'beleza', 'blz', 'fechado', 'combinado', 'perfeito', 'otimo',
-    // Palavras comuns
-    'as', 'hora', 'horas', 'dia', 'dias', 'pode', 'ser', 'que', 'para', 'com', 'esta', 'isso',
+    // Days of the week
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    // Times and dates
+    'today', 'tomorrow', 'morning', 'afternoon', 'evening',
+    // Confirmations
+    'yes', 'no', 'ok', 'right', 'cool', 'sure', 'perfect', 'great',
+    // Common words
+    'at', 'hour', 'hours', 'day', 'days', 'can', 'be', 'that', 'for', 'with', 'is', 'this',
 ]);
 
 /**
- * Valida se um valor pode ser um nome
+ * Validates if a value can be a name
  */
 export function validateName(value: string): { valid: boolean; reason?: string } {
     const normalized = normalizeText(value);
 
-    // Verifica se é palavra bloqueada
+    // Check if it is a blocked word
     if (BLOCKED_AS_NAME.has(normalized)) {
-        return { valid: false, reason: 'É uma palavra reservada (dia/hora/confirmação)' };
+        return { valid: false, reason: 'Is a reserved word (day/time/confirmation)' };
     }
 
-    // Verifica se é número
+    // Check if it is a number
     if (/^\d+$/.test(value.trim())) {
-        return { valid: false, reason: 'É um número' };
+        return { valid: false, reason: 'Is a number' };
     }
 
-    // Verifica se é formato de hora
-    if (/^[aàá]s?\s*\d/.test(value) || /^\d{1,2}[h:]\d{0,2}$/.test(value.trim())) {
-        return { valid: false, reason: 'É um formato de horário' };
+    // Check if it is a time format
+    if (/^at\s*\d/.test(value) || /^\d{1,2}[h:]\d{0,2}$/.test(value.trim())) {
+        return { valid: false, reason: 'Is a time format' };
     }
 
-    // Verifica se é email
+    // Check if it is an email
     if (/@/.test(value)) {
-        return { valid: false, reason: 'É um email' };
+        return { valid: false, reason: 'Is an email' };
     }
 
-    // Verifica se é muito curto
+    // Check if it is too short
     if (value.trim().length < 2) {
-        return { valid: false, reason: 'Muito curto' };
+        return { valid: false, reason: 'Too short' };
     }
 
-    // Verifica se contém caracteres inválidos para nome
+    // Check if it contains invalid characters for a name
     if (/[0-9@#$%^&*()_+=\[\]{}|\\:";'<>,.?\/]/.test(value)) {
-        return { valid: false, reason: 'Contém caracteres inválidos' };
+        return { valid: false, reason: 'Contains invalid characters' };
     }
 
     return { valid: true };
 }
 
 /**
- * Valida se um valor é um email válido
+ * Validates if a value is a valid email
  */
 export function validateEmail(value: string): { valid: boolean; reason?: string } {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i;
 
     if (!emailRegex.test(value.trim())) {
-        return { valid: false, reason: 'Formato de email inválido' };
+        return { valid: false, reason: 'Invalid email format' };
     }
 
     return { valid: true };
 }
 
 /**
- * Valida se um valor é um horário válido
+ * Validates if a value is a valid time
  */
 export function validateTime(value: string): { valid: boolean; reason?: string; normalized?: string } {
-    // Tenta extrair hora/minuto
+    // Try to extract hour/minute
     let hours: number | null = null;
     let minutes: string = '00';
 
-    // Padrão: "as 16", "às 10", "as 10:30"
-    const asMatch = value.match(/^[aàá]s?\s*(\d{1,2})(?:[h:](\d{2}))?$/i);
+    // Pattern: "at 16", "at 10", "at 10:30"
+    const asMatch = value.match(/^at\s*(\d{1,2})(?:[h:](\d{2}))?$/i);
     if (asMatch) {
         hours = parseInt(asMatch[1]);
         minutes = asMatch[2] || '00';
     }
 
-    // Padrão: "16h", "14h", "10h" (SEM minutos)
+    // Pattern: "16h", "14h", "10h" (WITHOUT minutes)
     if (hours === null) {
         const hourOnlyMatch = value.match(/^(\d{1,2})h$/i);
         if (hourOnlyMatch) {
@@ -185,7 +184,7 @@ export function validateTime(value: string): { valid: boolean; reason?: string; 
         }
     }
 
-    // Padrão: "10:00", "10h30", "16h45" (COM minutos)
+    // Pattern: "10:00", "10h30", "16h45" (WITH minutes)
     if (hours === null) {
         const timeMatch = value.match(/^(\d{1,2})[h:](\d{2})$/i);
         if (timeMatch) {
@@ -194,7 +193,7 @@ export function validateTime(value: string): { valid: boolean; reason?: string; 
         }
     }
 
-    // Padrão: número puro "16", "10"
+    // Pattern: pure number "16", "10"
     if (hours === null) {
         const pureNumber = value.match(/^(\d{1,2})$/);
         if (pureNumber) {
@@ -204,32 +203,32 @@ export function validateTime(value: string): { valid: boolean; reason?: string; 
     }
 
     if (hours === null) {
-        return { valid: false, reason: 'Não é um formato de horário reconhecido' };
+        return { valid: false, reason: 'Not a recognized time format' };
     }
 
-    // Valida horário comercial
+    // Validate business hours
     if (hours < 6 || hours > 22) {
-        return { valid: false, reason: 'Horário fora do comercial (6h-22h)' };
+        return { valid: false, reason: 'Time outside of business hours (6am-10pm)' };
     }
 
     return { valid: true, normalized: `${hours}:${minutes}` };
 }
 
 /**
- * Valida se um valor é uma data válida
+ * Validates if a value is a valid date
  */
 export function validateDate(value: string): { valid: boolean; reason?: string; normalized?: string } {
-    // Padrão: "22/12", "22-12"
+    // Pattern: "22/12", "22-12"
     const dateMatch = value.match(/^(\d{1,2})\s*[\/\-]\s*(\d{1,2})$/);
     if (dateMatch) {
         const day = parseInt(dateMatch[1]);
         const month = parseInt(dateMatch[2]);
 
         if (day < 1 || day > 31) {
-            return { valid: false, reason: 'Dia inválido' };
+            return { valid: false, reason: 'Invalid day' };
         }
         if (month < 1 || month > 12) {
-            return { valid: false, reason: 'Mês inválido' };
+            return { valid: false, reason: 'Invalid month' };
         }
 
         return {
@@ -238,7 +237,7 @@ export function validateDate(value: string): { valid: boolean; reason?: string; 
         };
     }
 
-    return { valid: false, reason: 'Formato de data não reconhecido' };
+    return { valid: false, reason: 'Unrecognized date format' };
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -246,7 +245,7 @@ export function validateDate(value: string): { valid: boolean; reason?: string; 
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Cria um estado inicial do agente
+ * Creates an initial state for the agent
  */
 export function createInitialState(
     threadId: string,
@@ -259,13 +258,13 @@ export function createInitialState(
         userId,
         messages: [],
         variables: {
-            nome: null,
+            name: null,
             email: null,
-            telefone: null,
+            phone: null,
             area: null,
-            desafio: null,
-            data_reuniao: null,
-            horario_reuniao: null,
+            challenge: null,
+            meeting_date: null,
+            meeting_time: null,
         },
         currentStage: 'initial',
         metadata: {
@@ -280,12 +279,12 @@ export function createInitialState(
 }
 
 /**
- * Cria uma mensagem do agente
+ * Creates an agent message
  */
 export function createMessage(
     role: MessageRole,
     content: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
 ): AgentMessage {
     return {
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -297,11 +296,11 @@ export function createMessage(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// MERGE DE VARIÁVEIS COM VALIDAÇÃO
+// MERGE VARIABLES WITH VALIDATION
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Faz merge de variáveis protegendo valores existentes
+ * Merges variables protecting existing values
  */
 export function mergeVariables(
     existing: AgentVariables,
@@ -318,33 +317,33 @@ export function mergeVariables(
     for (const [key, value] of Object.entries(extracted)) {
         if (value === null || value === undefined || value === '') continue;
 
-        // Proteger valores existentes
+        // Protect existing values
         if (protectExisting && existing[key] && String(existing[key]).trim() !== '') {
-            console.log(`[AgentState] 🛡️ Protegendo ${key} existente: "${existing[key]}"`);
+            console.log(`[AgentState] 🛡️ Protecting existing ${key}: "${existing[key]}"`);
             continue;
         }
 
-        // Validar antes de fazer merge
+        // Validate before merging
         if (validateBeforeMerge) {
             let validation: { valid: boolean; reason?: string } = { valid: true };
 
             switch (key) {
-                case 'nome':
+                case 'name':
                     validation = validateName(value);
                     break;
                 case 'email':
                     validation = validateEmail(value);
                     break;
-                case 'horario_reuniao':
+                case 'meeting_time':
                     validation = validateTime(value);
                     break;
-                case 'data_reuniao':
+                case 'meeting_date':
                     validation = validateDate(value);
                     break;
             }
 
             if (!validation.valid) {
-                console.log(`[AgentState] ❌ Rejeitando ${key}="${value}": ${validation.reason}`);
+                console.log(`[AgentState] ❌ Rejecting ${key}="${value}": ${validation.reason}`);
                 continue;
             }
         }
@@ -357,11 +356,11 @@ export function mergeVariables(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// SERIALIZAÇÃO
+// SERIALIZATION
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Converte AgentMessage[] para CoreMessage[] do AI SDK
+ * Converts AgentMessage[] to CoreMessage[] from the AI SDK
  */
 export function toCoreMesages(messages: AgentMessage[]): CoreMessage[] {
     return messages.map(msg => ({
@@ -371,7 +370,7 @@ export function toCoreMesages(messages: AgentMessage[]): CoreMessage[] {
 }
 
 /**
- * Serializa o estado para persistência
+ * Serializes the state for persistence
  */
 export function serializeState(state: AgentState): string {
     return JSON.stringify({
@@ -389,13 +388,13 @@ export function serializeState(state: AgentState): string {
 }
 
 /**
- * Deserializa o estado
+ * Deserializes the state
  */
 export function deserializeState(json: string): AgentState {
     const parsed = JSON.parse(json);
     return {
         ...parsed,
-        messages: parsed.messages.map((m: any) => ({
+        messages: parsed.messages.map((m: { timestamp: string | number | Date; }) => ({
             ...m,
             timestamp: new Date(m.timestamp),
         })),

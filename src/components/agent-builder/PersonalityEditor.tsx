@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label } from '@/components/ui';
 import { Sparkles, Save, CheckCircle } from 'lucide-react';
 import { savePersonality, type PersonalitySettings } from '@/app/actions/agent';
+import Image from 'next/image';
 
 interface PersonalityEditorProps {
     agentId: string;
@@ -11,22 +12,22 @@ interface PersonalityEditorProps {
 }
 
 const TONE_OPTIONS = [
-    { value: 'formal', label: 'Formal', description: 'Tom profissional e corporativo' },
-    { value: 'friendly', label: 'Amigável', description: 'Acolhedor e acessível' },
-    { value: 'professional', label: 'Profissional', description: 'Equilibrado e competente' },
-    { value: 'casual', label: 'Casual', description: 'Descontraído e leve' },
+    { value: 'formal', label: 'Formal', description: 'Professional and corporate tone' },
+    { value: 'friendly', label: 'Friendly', description: 'Welcoming and approachable' },
+    { value: 'professional', label: 'Professional', description: 'Balanced and competent' },
+    { value: 'casual', label: 'Casual', description: 'Relaxed and light' },
 ];
 
 const LANGUAGE_OPTIONS = [
-    { value: 'pt-BR', label: '🇧🇷 Português (Brasil)' },
-    { value: 'pt-PT', label: '🇵🇹 Português (Portugal)' },
+    { value: 'pt-BR', label: '🇧🇷 Portuguese (Brazil)' },
+    { value: 'pt-PT', label: '🇵🇹 Portuguese (Portugal)' },
     { value: 'en-US', label: '🇺🇸 English (US)' },
-    { value: 'es', label: '🇪🇸 Español' },
+    { value: 'es', label: '🇪🇸 Spanish' },
 ];
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- * PERSONALITY EDITOR - Configurar tom de voz e personalidade
+ * PERSONALITY EDITOR - Configure tone of voice and personality
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export function PersonalityEditor({ agentId, initialSettings }: PersonalityEditorProps) {
@@ -49,13 +50,13 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-purple-500" />
-                    Personalidade do Agente
+                    Agent Personality
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Display Name */}
                 <div className="space-y-2">
-                    <Label htmlFor="display-name">Nome exibido</Label>
+                    <Label htmlFor="display-name">Display Name</Label>
                     <Input
                         id="display-name"
                         value={settings.displayName || ''}
@@ -63,16 +64,16 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
                             setSettings(prev => ({ ...prev, displayName: e.target.value }));
                             setSaved(false);
                         }}
-                        placeholder="Ex: Sofia, Assistente Virtual"
+                        placeholder="e.g., Sofia, Virtual Assistant"
                     />
                     <p className="text-xs text-slate-500">
-                        Nome que aparece para o usuário no chat
+                        Name that appears to the user in the chat
                     </p>
                 </div>
 
                 {/* Personality Description */}
                 <div className="space-y-2">
-                    <Label htmlFor="personality">Descrição da personalidade</Label>
+                    <Label htmlFor="personality">Personality Description</Label>
                     <textarea
                         id="personality"
                         value={settings.personality || ''}
@@ -80,7 +81,7 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
                             setSettings(prev => ({ ...prev, personality: e.target.value }));
                             setSaved(false);
                         }}
-                        placeholder="Ex: Sou uma assistente simpática e prestativa, especialista em ajudar empreendedores..."
+                        placeholder="e.g., I am a friendly and helpful assistant, specializing in helping entrepreneurs..."
                         className="w-full rounded-lg border border-slate-200 p-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
                         rows={3}
                     />
@@ -88,7 +89,7 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
 
                 {/* Tone Selector */}
                 <div className="space-y-2">
-                    <Label>Tom de voz</Label>
+                    <Label>Tone of Voice</Label>
                     <div className="grid grid-cols-2 gap-2">
                         {TONE_OPTIONS.map((option) => (
                             <button
@@ -112,7 +113,7 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
 
                 {/* Language */}
                 <div className="space-y-2">
-                    <Label htmlFor="language">Idioma principal</Label>
+                    <Label htmlFor="language">Main Language</Label>
                     <select
                         id="language"
                         value={settings.language || 'pt-BR'}
@@ -133,9 +134,9 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
                 {/* Emojis Toggle */}
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="font-medium text-sm">Usar emojis</p>
+                        <p className="font-medium text-sm">Use Emojis</p>
                         <p className="text-xs text-slate-500">
-                            Incluir emojis nas respostas para mais expressividade
+                            Include emojis in responses for more expressiveness
                         </p>
                     </div>
                     <button
@@ -158,7 +159,7 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
 
                 {/* Avatar URL */}
                 <div className="space-y-2">
-                    <Label htmlFor="avatar-url">URL do Avatar</Label>
+                    <Label htmlFor="avatar-url">Avatar URL</Label>
                     <Input
                         id="avatar-url"
                         type="url"
@@ -171,15 +172,14 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
                     />
                     {settings.avatarUrl && (
                         <div className="flex items-center gap-2 mt-2">
-                            <img
+                            <Image
                                 src={settings.avatarUrl}
                                 alt="Avatar preview"
+                                width={48}
+                                height={48}
                                 className="h-12 w-12 rounded-full object-cover border border-slate-200"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
                             />
-                            <span className="text-sm text-slate-500">Preview do avatar</span>
+                            <span className="text-sm text-slate-500">Avatar preview</span>
                         </div>
                     )}
                 </div>
@@ -195,17 +195,17 @@ export function PersonalityEditor({ agentId, initialSettings }: PersonalityEdito
                         {isPending ? (
                             <>
                                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                Salvando...
+                                Saving...
                             </>
                         ) : saved ? (
                             <>
                                 <CheckCircle className="h-4 w-4" />
-                                Salvo!
+                                Saved!
                             </>
                         ) : (
                             <>
                                 <Save className="h-4 w-4" />
-                                Salvar Personalidade
+                                Save Personality
                             </>
                         )}
                     </Button>

@@ -1,7 +1,6 @@
 import { db } from '@/lib/db';
 import {
     agentStages,
-    agentActions,
     sessions,
     agents,
 } from '@/db/schema';
@@ -13,7 +12,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { BrainService } from '@/lib/ai/brain';
 import { GoogleCalendarService } from '@/server/integrations/google-calendar';
 import { GoogleSheetsService } from '@/server/integrations/google-sheets';
-import { formatContextWithXml, KNOWLEDGE_GUARDRAILS } from '@/server/services/knowledge-service';
+import { formatContextWithXml } from '@/server/services/knowledge-service';
 
 const brain = new BrainService();
 const calendar = new GoogleCalendarService();
@@ -119,7 +118,7 @@ export class StageMachine {
 
         // 5. PRÉ-VERIFICAÇÃO: Checar se estágio atual está completo ANTES de responder
         let activeStage = currentStage;
-        const existingVars = session.variables as Record<string, any> || {};
+        const existingVars = (session.variables as Record<string, unknown>) || {};
         const requiredVars = (currentStage.requiredVariables as string[]) || [];
 
         // 5a. DETECÇÃO DE INTENÇÃO DIRETA: Pular para agendamento se lead demonstrar interesse
@@ -189,7 +188,7 @@ export class StageMachine {
         }
 
         // Extrair variáveis da mensagem atual de forma simples
-        const extractedFromMessage: Record<string, any> = {};
+        const extractedFromMessage: Record<string, unknown> = {};
 
         // ════════════════════════════════════════════════════════════════════
         // REFATORAÇÃO CRÍTICA: Ordem correta de extração
@@ -467,8 +466,8 @@ export class StageMachine {
         const context = await brain.retrieveContext(agentId, userMessage);
 
         // 7. Obter modelo configurado
-        const modelConfig = agent.modelConfig as any || { provider: 'openai', model: 'gpt-4o-mini' };
-        const model = getModel(modelConfig.provider || 'openai', modelConfig.model || 'gpt-4o-mini');
+        const modelConfig = (agent.modelConfig as Record<string, unknown>) || { provider: 'openai', model: 'gpt-4o-mini' };
+        const model = getModel((modelConfig.provider as string) || 'openai', (modelConfig.model as string) || 'gpt-4o-mini');
 
         // 8. Construir prompt avançado para resposta (usando estágio ATIVO, não o antigo)
         const systemPrompt = this.buildAdvancedPrompt(agent, activeStage, allStages, session, context, needsBasicInfo);
@@ -512,7 +511,7 @@ export class StageMachine {
         // 11. AGENDAMENTO AUTOMÁTICO: Se estamos no estágio de schedule e temos os dados
         // CORREÇÃO CRÍTICA: Usar allExtractedVars que já foi salvo no banco, não session.variables que está desatualizado
         const updatedSessionVars = { ...(session?.variables as object || {}), ...allExtractedVars };
-        const finalVars: Record<string, any> = {
+        const finalVars: Record<string, unknown> = {
             ...updatedSessionVars,
             ...extractedFromMessage,  // CRÍTICO: incluir extração direta
             ...analysisResult.extractedVars
@@ -650,7 +649,7 @@ export class StageMachine {
                             console.error('[StageMachine] ❌ Falha ao criar reunião - sem ID retornado');
                         }
                     }
-                } catch (calError: any) {
+                } catch (calError) {
                     console.error('[StageMachine] ❌ Erro no agendamento:', calError);
 
                     // Graceful fallback: Inform user about the error
@@ -667,10 +666,15 @@ export class StageMachine {
     }
 
     /**
+import { Agent, AgentStage, Session } from '@/lib/types';
+
+// ... (rest of the file)
+
+    /**
      * Constrói prompt avançado para resposta de alta qualidade
      * Estrutura: PROMPT BASE + CONTEXTO DINÂMICO + CONTEXTO FACTUAL
      */
-    private buildAdvancedPrompt(agent: any, currentStage: any, allStages: any[], session: any, context: string[], needsBasicInfo: boolean = false) {
+    private buildAdvancedPrompt(agent: Agent, currentStage: AgentStage, allStages: AgentStage[], session: Session, context: string[], needsBasicInfo: boolean = false) {
         const vars = session?.variables || {};
         const currentIndex = allStages.findIndex(s => s.id === currentStage.id);
         const totalStages = allStages.length;
@@ -755,16 +759,20 @@ Se precisa de uma variável, faça UMA pergunta. Se tem tudo, avance.`;
     }
 
     /**
+import { LanguageModelV1 } from '@ai-sdk/provider';
+// ...
+
+    /**
      * Analisa a conversa para extração de variáveis e decisão de transição
      */
     private async analyzeResponseAndTransition(
-        model: any,
+        model: LanguageModelV1,
         userMessage: string,
         agentResponse: string,
-        currentStage: any,
-        allStages: any[],
-        session: any
-    ): Promise<{ shouldAdvance: boolean; nextStageId: string | null; extractedVars: Record<string, any> }> {
+        currentStage: AgentStage,
+        allStages: AgentStage[],
+        session: Session
+    ): Promise<{ shouldAdvance: boolean; nextStageId: string | null; extractedVars: Record<string, unknown> }> {
 
         const currentIndex = allStages.findIndex(s => s.id === currentStage.id);
         const nextStage = currentIndex < allStages.length - 1 ? allStages[currentIndex + 1] : null;
@@ -789,15 +797,6 @@ Se precisa de uma variável, faça UMA pergunta. Se tem tudo, avance.`;
         const requiredVars = currentStage.requiredVariables || [];
 
         try {
-            // Construir lista dinâmica de variáveis a procurar
-            const varsToExtract = [
-                ...requiredVars,
-                'nome', 'area', 'nicho', 'segmento', 'empresa', 'cargo',
-                'desafio', 'dor', 'problema', 'tempo_problema',
-                'faturamento', 'urgencia',
-                'email', 'telefone', 'data_reuniao', 'horario_reuniao'
-            ];
-
             const analysisPrompt = `Analise esta conversa e extraia informações:
 
 MENSAGEM DO USUÁRIO: "${userMessage}"
@@ -824,11 +823,11 @@ Responda APENAS com JSON válido:
 
             // Parse JSON da resposta
             const jsonMatch = analysisJson.match(/\{[\s\S]*\}/);
-            let extractedVars: Record<string, any> = {};
+            let extractedVars: Record<string, unknown> = {};
 
             if (jsonMatch) {
                 try {
-                    const analysis = JSON.parse(jsonMatch[0]);
+                    const analysis = JSON.parse(jsonMatch[0]) as { extracted?: Record<string, unknown> };
                     extractedVars = analysis.extracted || {};
                 } catch {
                     console.log('[StageMachine] Falha ao parsear JSON da análise');
@@ -876,7 +875,7 @@ Responda APENAS com JSON válido:
     /**
      * Executa ações automáticas do estágio
      */
-    private async executeStageActions(userId: string, stage: any, variables: any) {
+    private async executeStageActions(userId: string, stage: AgentStage, variables: Record<string, unknown>) {
         if (!stage.actions || stage.actions.length === 0) return;
 
         for (const action of stage.actions) {
@@ -885,7 +884,7 @@ Responda APENAS com JSON válido:
                     case 'google_calendar_list':
                         break;
                     case 'google_sheets_append':
-                        await sheets.appendRow(userId, variables, action.config as any);
+                        await sheets.appendRow(userId, variables, action.config as { spreadsheetId: string; range: string });
                         break;
                 }
             } catch (error) {

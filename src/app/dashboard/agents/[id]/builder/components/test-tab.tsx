@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, LegacyRef } from 'react';
 import { Send, Bot, User as UserIcon, Loader2, RotateCcw, ExternalLink, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { VariableInspector } from '@/components/agent-builder';
+import { AgentStage } from '@/db/schema';
 
 type Message = {
     role: 'user' | 'assistant';
@@ -21,21 +22,21 @@ export function TestTab() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isTyping, setIsTyping] = useState(false); // Indica que está esperando mais input
+    const [isTyping, setIsTyping] = useState(false); // Indicates waiting for more input
     const [threadId, setThreadId] = useState<string | null>(null);
     const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Refs para debounce
+    // Debounce refs
     const messageBufferRef = useRef<string[]>([]);
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const DEBOUNCE_MS = 1500; // 1.5 segundos
+    const DEBOUNCE_MS = 1500; // 1.5 seconds
 
-    // Estado para variáveis e estágios
+    // State for variables and stages
     const [threadState, setThreadState] = useState<{
         currentStageId: string | null;
         variables: Record<string, unknown>;
-        stages: any[];
+        stages: AgentStage[];
     }>({ currentStageId: null, variables: {}, stages: [] });
 
     useEffect(() => {
@@ -57,7 +58,7 @@ export function TestTab() {
                         setSessionStartTime(new Date(session.startTime));
                     }
                 } catch (e) {
-                    console.error('Erro ao carregar sessão anterior:', e);
+                    console.error('Error loading previous session:', e);
                 }
             }
         }
@@ -75,7 +76,7 @@ export function TestTab() {
         }
     }, [messages, threadId, agent?.id, sessionStartTime]);
 
-    // Processa mensagens acumuladas após o debounce
+    // Process accumulated messages after debounce
     async function processBufferedMessages() {
         if (!agent) return;
 
@@ -117,41 +118,41 @@ export function TestTab() {
             const assistantMessage: Message = { role: 'assistant', content: data.response, timestamp: new Date() };
             setMessages(prev => [...prev, assistantMessage]);
 
-            // Buscar estado atualizado da thread
+            // Fetch updated thread state
             if (data.threadId) {
                 fetchThreadState(data.threadId);
             }
         } catch (error) {
-            const errorMessage: Message = { role: 'assistant', content: `❌ Erro: ${String(error)}`, timestamp: new Date() };
+            const errorMessage: Message = { role: 'assistant', content: `❌ Error: ${String(error)}`, timestamp: new Date() };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
         }
     }
 
-    // Handler de envio com debounce - acumula mensagens por 1.5s
+    // Debounced send handler - accumulates messages for 1.5s
     function handleSend() {
         if (!input.trim() || !agent || isLoading) return;
 
         const userMsg = input.trim();
         setInput('');
 
-        // Adiciona ao buffer
+        // Add to buffer
         messageBufferRef.current.push(userMsg);
         setIsTyping(true);
 
-        // Limpa timer anterior
+        // Clear previous timer
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
         }
 
-        // Configura novo timer
+        // Set new timer
         debounceTimerRef.current = setTimeout(() => {
             processBufferedMessages();
         }, DEBOUNCE_MS);
     }
 
-    // Buscar estado da thread (estágio atual + variáveis)
+    // Fetch thread state (current stage + variables)
     async function fetchThreadState(tid: string) {
         try {
             const res = await fetch(`/api/threads/${tid}/state`);
@@ -165,11 +166,11 @@ export function TestTab() {
                 });
             }
         } catch (error) {
-            console.error('Erro ao buscar estado:', error);
+            console.error('Error fetching state:', error);
         }
     }
 
-    // Atualizar estado quando threadId mudar
+    // Update state when threadId changes
     useEffect(() => {
         if (threadId) {
             fetchThreadState(threadId);
@@ -194,16 +195,16 @@ export function TestTab() {
                         <Bot className="h-4 w-4 text-primary" />
                         Preview: {agent?.name}
                     </CardTitle>
-                    <Button variant="ghost" size="sm" onClick={handleReset} title="Reiniciar conversa">
+                    <Button variant="ghost" size="sm" onClick={handleReset} title="Reset conversation">
                         <RotateCcw className="h-4 w-4" />
                     </Button>
                 </CardHeader>
 
-                <ScrollArea className="flex-1 p-4" ref={scrollRef as any}>
+                <ScrollArea className="flex-1 p-4" ref={scrollRef as LegacyRef<HTMLDivElement> | undefined}>
                     <div className="space-y-4">
                         {messages.length === 0 && (
                             <div className="text-center text-muted-foreground text-sm py-10">
-                                Envie uma mensagem para testar o fluxo do seu agente.
+                                Send a message to test your agent's flow.
                             </div>
                         )}
 
@@ -233,19 +234,19 @@ export function TestTab() {
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 </div>
                                 <div className="bg-muted p-3 rounded-lg text-xs text-muted-foreground italic">
-                                    Digitando...
+                                    Typing...
                                 </div>
                             </div>
                         )}
 
-                        {/* Indicador de aguardando mais mensagens (debounce) */}
+                        {/* Indicator for waiting for more messages (debounce) */}
                         {isTyping && !isLoading && (
                             <div className="flex gap-3 ml-auto max-w-[80%] flex-row-reverse">
                                 <div className="h-8 w-8 rounded-full flex items-center justify-center shrink-0 bg-primary/50 text-primary-foreground">
                                     <UserIcon className="h-4 w-4" />
                                 </div>
                                 <div className="bg-primary/50 text-primary-foreground p-3 rounded-lg text-xs italic">
-                                    ⏳ Aguardando... (envie mais ou espere 1.5s)
+                                    ⏳ Waiting... (send more or wait 1.5s)
                                 </div>
                             </div>
                         )}
@@ -260,7 +261,7 @@ export function TestTab() {
                         <Input
                             value={input}
                             onChange={e => setInput(e.target.value)}
-                            placeholder="Digite uma mensagem..."
+                            placeholder="Type a message..."
                             disabled={isLoading}
                         />
                         <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
@@ -273,13 +274,13 @@ export function TestTab() {
             {/* Debug Info Sidebar with VariableInspector */}
             <Card className="w-80 h-[600px] hidden md:flex flex-col">
                 <CardHeader className="border-b py-3 flex flex-row items-center justify-between">
-                    <CardTitle className="text-sm font-medium">Debug Sessão</CardTitle>
+                    <CardTitle className="text-sm font-medium">Session Debug</CardTitle>
                     {threadId && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => fetchThreadState(threadId)}
-                            title="Atualizar estado"
+                            title="Refresh state"
                         >
                             <RefreshCw className="h-3 w-3" />
                         </Button>
@@ -289,7 +290,7 @@ export function TestTab() {
                     <div>
                         <label className="text-xs font-semibold text-muted-foreground uppercase">Thread ID</label>
                         <div className="text-xs font-mono bg-muted p-2 rounded flex items-center justify-between gap-2">
-                            <span className="truncate">{threadId || 'Nenhuma thread ativa'}</span>
+                            <span className="truncate">{threadId || 'No active thread'}</span>
                             {threadId && (
                                 <a
                                     href={`/dashboard/threads/${threadId}`}
@@ -304,22 +305,22 @@ export function TestTab() {
                     </div>
 
                     <div>
-                        <label className="text-xs font-semibold text-muted-foreground uppercase">Mensagens</label>
+                        <label className="text-xs font-semibold text-muted-foreground uppercase">Messages</label>
                         <div className="text-xs font-mono bg-muted p-2 rounded">
-                            {messages.length} mensagem(ns)
+                            {messages.length} message(s)
                         </div>
                     </div>
 
                     {sessionStartTime && (
                         <div>
-                            <label className="text-xs font-semibold text-muted-foreground uppercase">Sessão Iniciada</label>
+                            <label className="text-xs font-semibold text-muted-foreground uppercase">Session Started</label>
                             <div className="text-xs font-mono bg-muted p-2 rounded">
-                                {sessionStartTime.toLocaleTimeString('pt-BR')}
+                                {sessionStartTime.toLocaleTimeString('en-US')}
                             </div>
                         </div>
                     )}
 
-                    {/* Integração do VariableInspector */}
+                    {/* VariableInspector Integration */}
                     {threadId && threadState.stages.length > 0 && (
                         <div className="border-t pt-4 mt-4">
                             <VariableInspector
@@ -330,11 +331,11 @@ export function TestTab() {
                         </div>
                     )}
 
-                    {/* Fallback: Mostrar variáveis mesmo sem stages */}
+                    {/* Fallback: Show variables even without stages */}
                     {threadId && threadState.stages.length === 0 && Object.keys(threadState.variables).length > 0 && (
                         <div className="border-t pt-4 mt-4">
                             <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400 mb-3">
-                                Variáveis Coletadas
+                                Collected Variables
                             </h4>
                             <div className="space-y-2">
                                 {Object.entries(threadState.variables).map(([key, value]) => (
@@ -349,11 +350,11 @@ export function TestTab() {
 
                     <div className="border-t pt-4 mt-4">
                         <p className="text-xs text-muted-foreground">
-                            💡 As conversas de teste são salvas localmente e persistem entre recarregamentos.
+                            💡 Test conversations are saved locally and persist between reloads.
                         </p>
                         {threadId && (
                             <p className="text-xs text-muted-foreground mt-2">
-                                Clique no ícone ao lado do Thread ID para ver a conversa completa na seção de Threads.
+                                Click the icon next to the Thread ID to see the full conversation in the Threads section.
                             </p>
                         )}
                     </div>

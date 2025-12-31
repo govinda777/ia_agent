@@ -45,7 +45,7 @@ async function ensureDefaultUserExists(userId: string, email?: string): Promise<
 
             console.log('[OAuth2] Created/verified user:', userId);
         }
-    } catch (error: any) {
+    } catch {
         // If still conflicts, just log and continue - user might already exist
         console.log('[OAuth2] User already exists or conflict, continuing:', userId);
     }

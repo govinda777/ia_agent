@@ -2,9 +2,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * AI HEALTH CHECK API
  * ─────────────────────────────────────────────────────────────────────────────
- * 
+ *
  * Rota: /api/health/ai
- * 
+ *
  * Verifica se a API da OpenAI está configurada e funcionando.
  */
 
@@ -30,7 +30,7 @@ export async function GET() {
             message: 'AI configurada corretamente',
             timestamp: new Date().toISOString(),
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             {
                 status: 'error',

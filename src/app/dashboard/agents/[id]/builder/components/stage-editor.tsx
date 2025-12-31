@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AgentStage } from '@/db/schema';
+import { AgentStage, StageType } from '@/db/schema';
 import { useState, useEffect } from 'react';
 import { updateStageAction } from '@/server/actions/stages';
 import { Loader2 } from 'lucide-react';
@@ -27,34 +27,31 @@ interface Props {
 
 export function StageEditor({ isOpen, onClose, stage }: Props) {
     const { agent, updateStage } = useBuilderStore();
-    const [name, setName] = useState('');
-    const [type, setType] = useState('custom');
-    const [instructions, setInstructions] = useState('');
-    const [entryCondition, setEntryCondition] = useState('');
+    const [formData, setFormData] = useState(stage);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (stage) {
-            setName(stage.name);
-            setType(stage.type);
-            setInstructions(stage.instructions);
-            setEntryCondition(stage.entryCondition || '');
-        }
+        setFormData(stage);
     }, [stage]);
 
     async function handleSave() {
-        if (!stage || !agent) return;
+        if (!stage || !agent || !formData) return;
         setIsSaving(true);
 
         await updateStageAction(stage.id, agent.id, {
-            name,
-            type: type as any,
-            instructions,
-            entryCondition
+            name: formData.name,
+            type: formData.type,
+            instructions: formData.instructions,
+            entryCondition: formData.entryCondition
         });
 
         // Optimistic update
-        updateStage(stage.id, { name, type: type as any, instructions, entryCondition });
+        updateStage(stage.id, {
+            name: formData.name,
+            type: formData.type,
+            instructions: formData.instructions,
+            entryCondition: formData.entryCondition
+        });
 
         setIsSaving(false);
         onClose();
@@ -66,63 +63,63 @@ export function StageEditor({ isOpen, onClose, stage }: Props) {
         <Sheet open={isOpen} onOpenChange={onClose}>
             <SheetContent className="sm:max-w-xl overflow-y-auto">
                 <SheetHeader>
-                    <SheetTitle>Editar Estágio</SheetTitle>
+                    <SheetTitle>Edit Stage</SheetTitle>
                     <SheetDescription>
-                        Configure como este estágio deve se comportar.
+                        Configure how this stage should behave.
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="space-y-6 py-6">
                     <div className="space-y-2">
-                        <Label>Nome do Estágio</Label>
-                        <Input value={name} onChange={e => setName(e.target.value)} />
+                        <Label>Stage Name</Label>
+                        <Input value={formData?.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Tipo</Label>
-                        <Select value={type} onValueChange={setType}>
+                        <Label>Type</Label>
+                        <Select value={formData?.type} onValueChange={(v) => setFormData({ ...formData, type: v as StageType })}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="identify">Identificação (Coletar Dados)</SelectItem>
-                                <SelectItem value="diagnosis">Diagnóstico (Entender Problema)</SelectItem>
-                                <SelectItem value="schedule">Agendamento (Calendar)</SelectItem>
-                                <SelectItem value="handoff">Transbordo Humano</SelectItem>
-                                <SelectItem value="custom">Personalizado</SelectItem>
+                                <SelectItem value="identify">Identification (Collect Data)</SelectItem>
+                                <SelectItem value="diagnosis">Diagnosis (Understand Problem)</SelectItem>
+                                <SelectItem value="schedule">Scheduling (Calendar)</SelectItem>
+                                <SelectItem value="handoff">Human Handoff</SelectItem>
+                                <SelectItem value="custom">Custom</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Condição de Entrada</Label>
+                        <Label>Entry Condition</Label>
                         <Input
-                            value={entryCondition}
-                            onChange={e => setEntryCondition(e.target.value)}
-                            placeholder="Ex: Usuário quer agendar uma reunião..."
+                            value={formData?.entryCondition || ''}
+                            onChange={e => setFormData({ ...formData, entryCondition: e.target.value })}
+                            placeholder="e.g., User wants to schedule a meeting..."
                         />
                         <p className="text-xs text-muted-foreground">
-                            O agente só entrará neste estágio se a conversa atender a esta condição.
-                            Deixe em branco para fluxo sequencial forçado.
+                            The agent will only enter this stage if the conversation meets this condition.
+                            Leave blank for a forced sequential flow.
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Instruções do Agente (Prompt)</Label>
+                        <Label>Agent Instructions (Prompt)</Label>
                         <Textarea
                             className="min-h-[200px]"
-                            value={instructions}
-                            onChange={e => setInstructions(e.target.value)}
-                            placeholder="Instrua o agente sobre o que fazer e perguntar neste estágio."
+                            value={formData?.instructions}
+                            onChange={e => setFormData({ ...formData, instructions: e.target.value })}
+                            placeholder="Instruct the agent on what to do and ask in this stage."
                         />
                     </div>
                 </div>
 
                 <SheetFooter>
-                    <Button variant="outline" onClick={onClose}>Cancelar</Button>
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Alterações
+                        Save Changes
                     </Button>
                 </SheetFooter>
             </SheetContent>

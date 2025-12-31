@@ -27,13 +27,18 @@ export async function GET() {
                  WHEN duplicate_object THEN null;
                 END $$;
             `);
-        } catch (e: any) {
-            console.log('FK creation note:', e.message);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                console.log('FK creation note:', e.message);
+            }
         }
 
         return NextResponse.json({ success: true, message: 'Migration applied successfully' });
-    } catch (error: any) {
-        console.error('Migration error:', error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error('Migration error:', error);
+            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: false, error: 'Unknown migration error' }, { status: 500 });
     }
 }

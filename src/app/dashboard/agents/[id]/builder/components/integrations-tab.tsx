@@ -208,7 +208,7 @@ export function IntegrationsTab() {
     }
 
     // Callback quando WhatsApp conecta
-    function handleWhatsAppConnected(info: { phoneNumber: string; profileName: string }) {
+    function handleWhatsAppConnected(_info: { phoneNumber: string; profileName: string }) {
         setShowQRCode(false);
         fetchWhatsAppInstance();
     }

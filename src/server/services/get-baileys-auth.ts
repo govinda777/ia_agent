@@ -15,10 +15,10 @@ import {
  * Adaptador de autenticação Baileys para PostgreSQL.
  * Substitui o useMultiFileAuthState para funcionar em ambientes serverless (Vercel).
  */
-export const usePostgresAuthState = async (instanceId: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
+export const getPostgresAuthState = async (instanceId: string): Promise<{ state: AuthenticationState, saveCreds: () => Promise<void> }> => {
 
     // Função helper para salvar dados
-    const writeData = async (data: any, key: string) => {
+    const writeData = async (data: unknown, key: string) => {
         try {
             const value = JSON.stringify(data, BufferJSON.replacer);
 
@@ -99,7 +99,7 @@ export const usePostgresAuthState = async (instanceId: string): Promise<{ state:
                         const key = `${type}-${id}`;
                         const value = await readData(key);
                         if (type === 'app-state-sync-key' && value) {
-                            data[id] = proto.Message.AppStateSyncKeyData.fromObject(value) as any;
+                            data[id] = proto.Message.AppStateSyncKeyData.fromObject(value) as SignalDataTypeMap['app-state-sync-key'];
                         } else if (value) {
                             data[id] = value;
                         }
@@ -111,11 +111,11 @@ export const usePostgresAuthState = async (instanceId: string): Promise<{ state:
                     // Salvar cada item
                     const tasks: Promise<void>[] = [];
 
-                    const dataAny = data as any; // Cast para evitar erro de indexação
+                    const dataAny = data as Record<keyof SignalDataTypeMap, Record<string, unknown>>;
 
                     for (const category in dataAny) {
-                        for (const id in dataAny[category]) {
-                            const value = dataAny[category][id];
+                        for (const id in dataAny[category as keyof SignalDataTypeMap]) {
+                            const value = dataAny[category as keyof SignalDataTypeMap][id];
                             const key = `${category}-${id}`;
 
                             if (value) {

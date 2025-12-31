@@ -21,7 +21,7 @@ import makeWASocket, {
 import { Boom } from '@hapi/boom';
 import { EventEmitter } from 'events';
 import pino from 'pino';
-import { usePostgresAuthState } from './baileys-auth';
+import { getPostgresAuthState } from './get-baileys-auth';
 
 // Tipos de eventos emitidos pelo serviço
 export interface BaileysServiceEvents {
@@ -66,7 +66,7 @@ export class BaileysService extends EventEmitter {
 
         try {
             // Carregar estado de autenticação do Banco de Dados (Hotfix Vercel)
-            const { state, saveCreds } = await usePostgresAuthState(this.instanceId);
+            const { state, saveCreds } = await getPostgresAuthState(this.instanceId);
 
             // Criar socket
             this.socket = makeWASocket({

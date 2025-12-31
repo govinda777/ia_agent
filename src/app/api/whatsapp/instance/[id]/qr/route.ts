@@ -2,9 +2,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * WHATSAPP QR CODE API - Server-Sent Events para QR Code
  * ─────────────────────────────────────────────────────────────────────────────
- * 
+ *
  * GET /api/whatsapp/instance/[id]/qr - Stream SSE de QR Codes
- * 
+ *
  * Retorna eventos:
  * - qr: { qr: "base64..." } - Novo QR Code gerado
  * - connected: { phoneNumber: "...", profileName: "..." } - Conexão estabelecida
@@ -54,7 +54,7 @@ export async function GET(
                     controller.enqueue(
                         encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
                     );
-                } catch (e) {
+                } catch {
                     // Stream pode ter sido fechado
                 }
             };
@@ -125,7 +125,7 @@ export async function GET(
             const heartbeat = setInterval(() => {
                 try {
                     controller.enqueue(encoder.encode(': heartbeat\n\n'));
-                } catch (e) {
+                } catch {
                     clearInterval(heartbeat);
                     cleanup();
                 }

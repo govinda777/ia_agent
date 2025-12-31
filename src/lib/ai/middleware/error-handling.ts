@@ -1,33 +1,33 @@
 /**
- * ErrorHandlingMiddleware - Tratamento robusto de erros
- * 
- * Baseado em: https://docs.langchain.com/oss/python/langchain/agents#tool-error-handling
- * 
- * Fornece:
- * - Retry automático com backoff exponencial
- * - Fallback para respostas padrão
- * - Logging estruturado de erros
- * - Circuit breaker para APIs problemáticas
+ * ErrorHandlingMiddleware - Robust error handling
+ *
+ * Based on: https://docs.langchain.com/oss/python/langchain/agents#tool-error-handling
+ *
+ * Provides:
+ * - Automatic retry with exponential backoff
+ * - Fallback to default responses
+ * - Structured error logging
+ * - Circuit breaker for problematic APIs
  */
 
-import { AgentState, createMessage } from '../agent-state';
+import { AgentState } from '../agent-state';
 
 // ════════════════════════════════════════════════════════════════════
-// TIPOS
+// TYPES
 // ════════════════════════════════════════════════════════════════════
 
 export interface ErrorHandlingConfig {
-    /** Número máximo de tentativas */
+    /** Maximum number of retries */
     maxRetries: number;
-    /** Tempo base para backoff exponencial (ms) */
+    /** Base time for exponential backoff (ms) */
     baseBackoffMs: number;
-    /** Tempo máximo de espera (ms) */
+    /** Maximum wait time (ms) */
     maxBackoffMs: number;
-    /** Habilitar circuit breaker */
+    /** Enable circuit breaker */
     enableCircuitBreaker: boolean;
-    /** Número de falhas antes de abrir o circuito */
+    /** Number of failures before opening the circuit */
     circuitBreakerThreshold: number;
-    /** Tempo para tentar fechar o circuito (ms) */
+    /** Time to try closing the circuit (ms) */
     circuitBreakerResetMs: number;
 }
 
@@ -36,7 +36,7 @@ export interface ErrorContext {
     error: Error;
     attempt: number;
     state: AgentState;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export type ErrorHandler = (context: ErrorContext) => Promise<string | null>;
@@ -51,14 +51,14 @@ const DEFAULT_CONFIG: ErrorHandlingConfig = {
 };
 
 // ════════════════════════════════════════════════════════════════════
-// RESPOSTAS DE FALLBACK
+// FALLBACK RESPONSES
 // ════════════════════════════════════════════════════════════════════
 
 const FALLBACK_RESPONSES: Record<string, string> = {
-    'scheduling': 'Desculpe, estou com dificuldades para acessar a agenda no momento. Posso tentar novamente em alguns segundos, ou você prefere que eu anote os dados e confirme depois?',
-    'ai_generation': 'Peço desculpas, estou enfrentando uma instabilidade momentânea. Por favor, repita sua mensagem ou aguarde um instante.',
-    'database': 'Estou com dificuldades técnicas temporárias. Suas informações estão seguras e continuaremos em breve.',
-    'default': 'Desculpe, algo deu errado. Por favor, tente novamente em alguns segundos.',
+    'scheduling': 'Sorry, I\'m having trouble accessing the calendar at the moment. Can I try again in a few seconds, or would you prefer I take down the details and confirm later?',
+    'ai_generation': 'I apologize, I\'m experiencing a momentary instability. Please repeat your message or wait a moment.',
+    'database': 'I\'m having temporary technical difficulties. Your information is safe and we will continue shortly.',
+    'default': 'Sorry, something went wrong. Please try again in a few seconds.',
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -85,7 +85,7 @@ function getCircuitState(operation: string): CircuitState {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// MIDDLEWARE DE TRATAMENTO DE ERROS
+// ERROR HANDLING MIDDLEWARE
 // ════════════════════════════════════════════════════════════════════
 
 export class ErrorHandlingMiddleware {
@@ -97,25 +97,25 @@ export class ErrorHandlingMiddleware {
     }
 
     /**
-     * Registra um handler customizado para um tipo de operação
+     * Registers a custom handler for an operation type
      */
     registerHandler(operation: string, handler: ErrorHandler): void {
         this.customHandlers.set(operation, handler);
     }
 
     /**
-     * Verifica se o circuito está aberto para uma operação
+     * Checks if the circuit is open for an operation
      */
     isCircuitOpen(operation: string): boolean {
         if (!this.config.enableCircuitBreaker) return false;
 
         const state = getCircuitState(operation);
 
-        // Verificar se já passou tempo suficiente para tentar fechar
+        // Check if enough time has passed to try closing
         if (state.isOpen && state.lastFailure) {
             const elapsed = Date.now() - state.lastFailure.getTime();
             if (elapsed > this.config.circuitBreakerResetMs) {
-                console.log(`[ErrorMiddleware] 🔄 Circuit breaker half-open para ${operation}`);
+                console.log(`[ErrorMiddleware] 🔄 Circuit breaker half-open for ${operation}`);
                 state.isOpen = false;
                 state.failures = 0;
             }
@@ -125,7 +125,7 @@ export class ErrorHandlingMiddleware {
     }
 
     /**
-     * Registra uma falha para o circuit breaker
+     * Records a failure for the circuit breaker
      */
     private recordFailure(operation: string): void {
         const state = getCircuitState(operation);
@@ -134,12 +134,12 @@ export class ErrorHandlingMiddleware {
 
         if (state.failures >= this.config.circuitBreakerThreshold) {
             state.isOpen = true;
-            console.log(`[ErrorMiddleware] 🔴 Circuit breaker ABERTO para ${operation}`);
+            console.log(`[ErrorMiddleware] 🔴 Circuit breaker OPEN for ${operation}`);
         }
     }
 
     /**
-     * Registra um sucesso para o circuit breaker
+     * Records a success for the circuit breaker
      */
     private recordSuccess(operation: string): void {
         const state = getCircuitState(operation);
@@ -148,7 +148,7 @@ export class ErrorHandlingMiddleware {
     }
 
     /**
-     * Calcula o tempo de espera com backoff exponencial
+     * Calculates the wait time with exponential backoff
      */
     private calculateBackoff(attempt: number): number {
         const backoff = this.config.baseBackoffMs * Math.pow(2, attempt);
@@ -156,16 +156,16 @@ export class ErrorHandlingMiddleware {
     }
 
     /**
-     * Executa uma operação com retry e tratamento de erros
+     * Executes an operation with retry and error handling
      */
     async execute<T>(
         operation: string,
         fn: () => Promise<T>,
         state: AgentState
     ): Promise<{ success: boolean; result?: T; fallbackResponse?: string }> {
-        // Verificar circuit breaker
+        // Check circuit breaker
         if (this.isCircuitOpen(operation)) {
-            console.log(`[ErrorMiddleware] ⛔ Circuit breaker aberto para ${operation}`);
+            console.log(`[ErrorMiddleware] ⛔ Circuit breaker open for ${operation}`);
             return {
                 success: false,
                 fallbackResponse: FALLBACK_RESPONSES[operation] || FALLBACK_RESPONSES['default'],
@@ -181,9 +181,9 @@ export class ErrorHandlingMiddleware {
                 return { success: true, result };
             } catch (error) {
                 lastError = error instanceof Error ? error : new Error(String(error));
-                console.log(`[ErrorMiddleware] ⚠️ Tentativa ${attempt + 1}/${this.config.maxRetries} falhou para ${operation}:`, lastError.message);
+                console.log(`[ErrorMiddleware] ⚠️ Attempt ${attempt + 1}/${this.config.maxRetries} failed for ${operation}:`, lastError.message);
 
-                // Tentar handler customizado
+                // Try custom handler
                 if (this.customHandlers.has(operation)) {
                     const customResponse = await this.customHandlers.get(operation)!({
                         operation,
@@ -197,18 +197,18 @@ export class ErrorHandlingMiddleware {
                     }
                 }
 
-                // Aguardar antes de tentar novamente
+                // Wait before retrying
                 if (attempt < this.config.maxRetries - 1) {
                     const backoff = this.calculateBackoff(attempt);
-                    console.log(`[ErrorMiddleware] ⏳ Aguardando ${backoff}ms antes de tentar novamente...`);
+                    console.log(`[ErrorMiddleware] ⏳ Waiting ${backoff}ms before retrying...`);
                     await new Promise(resolve => setTimeout(resolve, backoff));
                 }
             }
         }
 
-        // Todas as tentativas falharam
+        // All retries failed
         this.recordFailure(operation);
-        console.log(`[ErrorMiddleware] ❌ Todas as tentativas falharam para ${operation}`);
+        console.log(`[ErrorMiddleware] ❌ All attempts failed for ${operation}`);
 
         return {
             success: false,
@@ -218,11 +218,11 @@ export class ErrorHandlingMiddleware {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FUNÇÃO AUXILIAR
+// HELPER FUNCTION
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Cria uma instância do middleware com configurações padrão
+ * Creates an instance of the middleware with default settings
  */
 export function createErrorHandlingMiddleware(
     config?: Partial<ErrorHandlingConfig>

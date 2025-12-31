@@ -1,28 +1,28 @@
 /**
- * ToolExecutor - Execução estruturada de ferramentas
- * 
- * Baseado em: https://docs.langchain.com/oss/python/langchain/tools
- * 
- * Fornece:
- * - Registro de ferramentas com tipagem
- * - Execução com validação de parâmetros
- * - Logging estruturado
- * - Integração com ErrorHandlingMiddleware
+ * ToolExecutor - Structured tool execution
+ *
+ * Based on: https://docs.langchain.com/oss/python/langchain/tools
+ *
+ * Provides:
+ * - Registration of tools with typing
+ * - Execution with parameter validation
+ * - Structured logging
+ * - Integration with ErrorHandlingMiddleware
  */
 
 import { AgentState, ToolCall } from '../agent-state';
 import { ErrorHandlingMiddleware, createErrorHandlingMiddleware } from './error-handling';
 
 // ════════════════════════════════════════════════════════════════════
-// TIPOS
+// TYPES
 // ════════════════════════════════════════════════════════════════════
 
 export interface ToolDefinition {
-    /** Nome único da ferramenta */
+    /** Unique name of the tool */
     name: string;
-    /** Descrição para o modelo entender quando usar */
+    /** Description for the model to understand when to use it */
     description: string;
-    /** Schema JSON dos parâmetros */
+    /** JSON schema of the parameters */
     parameters: {
         type: 'object';
         properties: Record<string, {
@@ -32,19 +32,19 @@ export interface ToolDefinition {
         }>;
         required?: string[];
     };
-    /** Função de execução */
-    execute: (args: Record<string, any>, state: AgentState) => Promise<string>;
+    /** Execution function */
+    execute: (args: Record<string, unknown>, state: AgentState) => Promise<string>;
 }
 
 export interface ToolResult {
     success: boolean;
     content: string;
     toolCallId: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 // ════════════════════════════════════════════════════════════════════
-// EXECUTOR DE FERRAMENTAS
+// TOOL EXECUTOR
 // ════════════════════════════════════════════════════════════════════
 
 export class ToolExecutor {
@@ -56,49 +56,49 @@ export class ToolExecutor {
     }
 
     /**
-     * Registra uma ferramenta
+     * Registers a tool
      */
     register(tool: ToolDefinition): void {
         this.tools.set(tool.name, tool);
-        console.log(`[ToolExecutor] 🔧 Ferramenta registrada: ${tool.name}`);
+        console.log(`[ToolExecutor] 🔧 Tool registered: ${tool.name}`);
     }
 
     /**
-     * Registra múltiplas ferramentas
+     * Registers multiple tools
      */
     registerAll(tools: ToolDefinition[]): void {
         tools.forEach(tool => this.register(tool));
     }
 
     /**
-     * Lista as ferramentas disponíveis
+     * Lists the available tools
      */
     list(): ToolDefinition[] {
         return Array.from(this.tools.values());
     }
 
     /**
-     * Obtém uma ferramenta pelo nome
+     * Gets a tool by name
      */
     get(name: string): ToolDefinition | undefined {
         return this.tools.get(name);
     }
 
     /**
-     * Valida os parâmetros de uma ferramenta
+     * Validates a tool's parameters
      */
-    validateParams(tool: ToolDefinition, args: Record<string, any>): { valid: boolean; errors: string[] } {
+    validateParams(tool: ToolDefinition, args: Record<string, unknown>): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
         const required = tool.parameters.required || [];
 
-        // Verificar parâmetros obrigatórios
+        // Check required parameters
         for (const param of required) {
             if (!(param in args) || args[param] === null || args[param] === undefined) {
-                errors.push(`Parâmetro obrigatório ausente: ${param}`);
+                errors.push(`Missing required parameter: ${param}`);
             }
         }
 
-        // Verificar tipos
+        // Check types
         for (const [key, value] of Object.entries(args)) {
             const paramDef = tool.parameters.properties[key];
             if (paramDef) {
@@ -106,13 +106,13 @@ export class ToolExecutor {
                 const actualType = typeof value;
 
                 if (expectedType === 'string' && actualType !== 'string') {
-                    errors.push(`Parâmetro ${key} deve ser string, recebido ${actualType}`);
+                    errors.push(`Parameter ${key} should be a string, received ${actualType}`);
                 }
                 if (expectedType === 'number' && actualType !== 'number') {
-                    errors.push(`Parâmetro ${key} deve ser number, recebido ${actualType}`);
+                    errors.push(`Parameter ${key} should be a number, received ${actualType}`);
                 }
                 if (expectedType === 'boolean' && actualType !== 'boolean') {
-                    errors.push(`Parâmetro ${key} deve ser boolean, recebido ${actualType}`);
+                    errors.push(`Parameter ${key} should be a boolean, received ${actualType}`);
                 }
             }
         }
@@ -121,34 +121,34 @@ export class ToolExecutor {
     }
 
     /**
-     * Executa uma ferramenta
+     * Executes a tool
      */
     async execute(toolCall: ToolCall, state: AgentState): Promise<ToolResult> {
         const tool = this.tools.get(toolCall.name);
 
         if (!tool) {
-            console.log(`[ToolExecutor] ❌ Ferramenta não encontrada: ${toolCall.name}`);
+            console.log(`[ToolExecutor] ❌ Tool not found: ${toolCall.name}`);
             return {
                 success: false,
-                content: `Erro: Ferramenta "${toolCall.name}" não encontrada.`,
+                content: `Error: Tool "${toolCall.name}" not found.`,
                 toolCallId: toolCall.id,
             };
         }
 
-        // Validar parâmetros
+        // Validate parameters
         const validation = this.validateParams(tool, toolCall.args);
         if (!validation.valid) {
-            console.log(`[ToolExecutor] ❌ Parâmetros inválidos:`, validation.errors);
+            console.log(`[ToolExecutor] ❌ Invalid parameters:`, validation.errors);
             return {
                 success: false,
-                content: `Erro: Parâmetros inválidos - ${validation.errors.join(', ')}`,
+                content: `Error: Invalid parameters - ${validation.errors.join(', ')}`,
                 toolCallId: toolCall.id,
             };
         }
 
-        console.log(`[ToolExecutor] 🔧 Executando ${toolCall.name}:`, toolCall.args);
+        console.log(`[ToolExecutor] 🔧 Executing ${toolCall.name}:`, toolCall.args);
 
-        // Executar com tratamento de erros
+        // Execute with error handling
         const result = await this.errorHandler.execute(
             `tool_${toolCall.name}`,
             () => tool.execute(toolCall.args, state),
@@ -156,14 +156,14 @@ export class ToolExecutor {
         );
 
         if (result.success) {
-            console.log(`[ToolExecutor] ✅ ${toolCall.name} executado com sucesso`);
+            console.log(`[ToolExecutor] ✅ ${toolCall.name} executed successfully`);
             return {
                 success: true,
                 content: result.result!,
                 toolCallId: toolCall.id,
             };
         } else {
-            console.log(`[ToolExecutor] ⚠️ ${toolCall.name} falhou, usando fallback`);
+            console.log(`[ToolExecutor] ⚠️ ${toolCall.name} failed, using fallback`);
             return {
                 success: false,
                 content: result.fallbackResponse!,
@@ -174,14 +174,14 @@ export class ToolExecutor {
     }
 
     /**
-     * Executa múltiplas ferramentas em paralelo
+     * Executes multiple tools in parallel
      */
     async executeAll(toolCalls: ToolCall[], state: AgentState): Promise<ToolResult[]> {
         return Promise.all(toolCalls.map(tc => this.execute(tc, state)));
     }
 
     /**
-     * Gera o schema das ferramentas para o modelo
+     * Generates the schema of the tools for the model
      */
     getToolSchemas(): Array<{
         type: 'function';
@@ -203,62 +203,62 @@ export class ToolExecutor {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FERRAMENTAS PADRÃO
+// DEFAULT TOOLS
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Ferramenta para salvar lead no CRM
+ * Tool to save a lead in the CRM
  */
 export const saveLeadTool: ToolDefinition = {
     name: 'save_lead',
-    description: 'Salva os dados do lead no sistema CRM',
+    description: 'Saves the lead\'s data in the CRM system',
     parameters: {
         type: 'object',
         properties: {
-            nome: { type: 'string', description: 'Nome do lead' },
-            email: { type: 'string', description: 'Email do lead' },
-            telefone: { type: 'string', description: 'Telefone do lead' },
-            area: { type: 'string', description: 'Área/nicho do lead' },
-            desafio: { type: 'string', description: 'Desafio principal' },
+            name: { type: 'string', description: 'Lead\'s name' },
+            email: { type: 'string', description: 'Lead\'s email' },
+            phone: { type: 'string', description: 'Lead\'s phone number' },
+            area: { type: 'string', description: 'Lead\'s area/niche' },
+            challenge: { type: 'string', description: 'Main challenge' },
         },
-        required: ['nome'],
+        required: ['name'],
     },
-    execute: async (args, state) => {
-        // Implementação de exemplo - integrar com seu CRM
-        console.log('[save_lead] Salvando lead:', args);
-        return `Lead ${args.nome} salvo com sucesso.`;
+    execute: async (args, _state) => {
+        // Example implementation - integrate with your CRM
+        console.log('[save_lead] Saving lead:', args);
+        return `Lead ${args.name} saved successfully.`;
     },
 };
 
 /**
- * Ferramenta para agendar reunião
+ * Tool to schedule a meeting
  */
 export const scheduleMeetingTool: ToolDefinition = {
     name: 'schedule_meeting',
-    description: 'Agenda uma reunião no Google Calendar',
+    description: 'Schedules a meeting in Google Calendar',
     parameters: {
         type: 'object',
         properties: {
-            email: { type: 'string', description: 'Email do participante' },
-            data: { type: 'string', description: 'Data da reunião (DD/MM)' },
-            horario: { type: 'string', description: 'Horário da reunião (HH:MM)' },
-            nome: { type: 'string', description: 'Nome do participante' },
+            email: { type: 'string', description: 'Participant\'s email' },
+            date: { type: 'string', description: 'Meeting date (DD/MM)' },
+            time: { type: 'string', description: 'Meeting time (HH:MM)' },
+            name: { type: 'string', description: 'Participant\'s name' },
         },
-        required: ['email', 'data', 'horario'],
+        required: ['email', 'date', 'time'],
     },
-    execute: async (args, state) => {
-        // Implementação de exemplo - integrar com Google Calendar
-        console.log('[schedule_meeting] Agendando reunião:', args);
-        return `Reunião agendada para ${args.data} às ${args.horario} com ${args.nome || 'participante'}.`;
+    execute: async (args, _state) => {
+        // Example implementation - integrate with Google Calendar
+        console.log('[schedule_meeting] Scheduling meeting:', args);
+        return `Meeting scheduled for ${args.date} at ${args.time} with ${args.name || 'participant'}.`;
     },
 };
 
 // ════════════════════════════════════════════════════════════════════
-// FUNÇÃO AUXILIAR
+// HELPER FUNCTION
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Cria uma instância do executor com ferramentas padrão
+ * Creates an instance of the executor with default tools
  */
 export function createToolExecutor(
     customTools?: ToolDefinition[],
@@ -266,11 +266,11 @@ export function createToolExecutor(
 ): ToolExecutor {
     const executor = new ToolExecutor(errorHandler);
 
-    // Registrar ferramentas padrão
+    // Register default tools
     executor.register(saveLeadTool);
     executor.register(scheduleMeetingTool);
 
-    // Registrar ferramentas customizadas
+    // Register custom tools
     if (customTools) {
         executor.registerAll(customTools);
     }

@@ -15,7 +15,7 @@ interface TakeoverControlProps {
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- * TAKEOVER CONTROL - Botão para assumir/devolver conversa
+ * TAKEOVER CONTROL - Button to take over/release a conversation
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export function TakeoverControl({
@@ -43,10 +43,10 @@ export function TakeoverControl({
                     setIsHumanTakeover(newStatus);
                     onStatusChange?.(newStatus);
                 } else {
-                    setError(result.error || 'Erro ao alterar status');
+                    setError(result.error || 'Error changing status');
                 }
-            } catch (err) {
-                setError('Erro inesperado');
+            } catch {
+                setError('Unexpected error');
             }
         });
     };
@@ -58,7 +58,7 @@ export function TakeoverControl({
                 <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
                     <UserCheck className="h-4 w-4" />
                     <div>
-                        <span className="font-medium">Você está no controle</span>
+                        <span className="font-medium">You are in control</span>
                         {takeoverReason && (
                             <span className="ml-2 text-amber-600">({takeoverReason})</span>
                         )}
@@ -77,17 +77,17 @@ export function TakeoverControl({
                 {isPending ? (
                     <>
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Processando...
+                        Processing...
                     </>
                 ) : isHumanTakeover ? (
                     <>
                         <Bot className="h-4 w-4" />
-                        Devolver ao Agente
+                        Release to Agent
                     </>
                 ) : (
                     <>
                         <UserCheck className="h-4 w-4" />
-                        Assumir Conversa
+                        Take Over Conversation
                     </>
                 )}
             </Button>
@@ -104,7 +104,7 @@ export function TakeoverControl({
 }
 
 /**
- * Badge simples para indicar status de takeover
+ * Simple badge to indicate takeover status
  */
 export function TakeoverBadge({ isHumanTakeover }: { isHumanTakeover: boolean }) {
     if (!isHumanTakeover) return null;
@@ -112,7 +112,7 @@ export function TakeoverBadge({ isHumanTakeover }: { isHumanTakeover: boolean })
     return (
         <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
             <UserCheck className="h-3 w-3" />
-            Humano
+            Human
         </span>
     );
 }

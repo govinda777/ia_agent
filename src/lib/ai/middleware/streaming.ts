@@ -1,39 +1,39 @@
 /**
- * StreamingMiddleware - Suporte a streaming de respostas
- * 
- * Baseado em: https://docs.langchain.com/oss/python/langchain/streaming
- * 
- * Fornece:
- * - Chunks de texto para resposta progressiva
- * - Callbacks para UI updates
- * - Buffer de tokens
+ * StreamingMiddleware - Support for streaming responses
+ *
+ * Based on: https://docs.langchain.com/oss/python/langchain/streaming
+ *
+ * Provides:
+ * - Text chunks for progressive response
+ * - Callbacks for UI updates
+ * - Token buffer
  */
 
-import { AgentState, AgentMessage, createMessage } from '../agent-state';
+import { AgentMessage, createMessage } from '../agent-state';
 
 // ════════════════════════════════════════════════════════════════════
-// TIPOS
+// TYPES
 // ════════════════════════════════════════════════════════════════════
 
 export interface StreamChunk {
     type: 'text' | 'tool_start' | 'tool_end' | 'complete';
     content: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
     timestamp: Date;
 }
 
 export type StreamCallback = (chunk: StreamChunk) => void;
 
 export interface StreamingConfig {
-    /** Tamanho mínimo do buffer antes de enviar chunk */
+    /** Minimum buffer size before sending a chunk */
     bufferSize: number;
-    /** Incluir metadata nos chunks */
+    /** Include metadata in chunks */
     includeMetadata: boolean;
-    /** Callback para cada chunk */
+    /** Callback for each chunk */
     onChunk?: StreamCallback;
-    /** Callback quando streaming completa */
+    /** Callback when streaming is complete */
     onComplete?: (fullContent: string) => void;
-    /** Callback para erros */
+    /** Callback for errors */
     onError?: (error: Error) => void;
 }
 
@@ -43,7 +43,7 @@ const DEFAULT_CONFIG: StreamingConfig = {
 };
 
 // ════════════════════════════════════════════════════════════════════
-// MIDDLEWARE DE STREAMING
+// STREAMING MIDDLEWARE
 // ════════════════════════════════════════════════════════════════════
 
 export class StreamingMiddleware {
@@ -56,7 +56,7 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Processa um texto adicionando ao buffer
+     * Processes text by adding it to the buffer
      */
     pushText(text: string): void {
         this.buffer += text;
@@ -67,7 +67,7 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Força o envio do buffer atual
+     * Forces the current buffer to be sent
      */
     flush(): void {
         if (this.buffer.length === 0) return;
@@ -84,10 +84,10 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Sinaliza início de execução de ferramenta
+     * Signals the start of a tool execution
      */
-    toolStart(toolName: string, args: Record<string, any>): void {
-        this.flush(); // Envia qualquer texto pendente
+    toolStart(toolName: string, args: Record<string, unknown>): void {
+        this.flush(); // Send any pending text
 
         const chunk: StreamChunk = {
             type: 'tool_start',
@@ -101,7 +101,7 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Sinaliza fim de execução de ferramenta
+     * Signals the end of a tool execution
      */
     toolEnd(toolName: string, result: string): void {
         const chunk: StreamChunk = {
@@ -116,10 +116,10 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Finaliza o streaming
+     * Finalizes the streaming
      */
     complete(): string {
-        this.flush(); // Envia qualquer texto pendente
+        this.flush(); // Send any pending text
 
         const fullContent = this.chunks
             .filter(c => c.type === 'text')
@@ -141,7 +141,7 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Reseta o estado do middleware
+     * Resets the middleware's state
      */
     reset(): void {
         this.buffer = '';
@@ -149,14 +149,14 @@ export class StreamingMiddleware {
     }
 
     /**
-     * Obtém todos os chunks gerados
+     * Gets all generated chunks
      */
     getChunks(): StreamChunk[] {
         return [...this.chunks];
     }
 
     /**
-     * Cria uma mensagem do assistente com o conteúdo completo
+     * Creates an assistant message with the full content
      */
     toMessage(): AgentMessage {
         const fullContent = this.chunks
@@ -172,11 +172,11 @@ export class StreamingMiddleware {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// HELPER PARA PROCESSAR STREAM DO AI SDK
+// HELPER TO PROCESS STREAM FROM AI SDK
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Processa um stream do AI SDK através do middleware
+ * Processes a stream from the AI SDK through the middleware
  */
 export async function processStream(
     stream: AsyncIterable<string>,
@@ -190,11 +190,11 @@ export async function processStream(
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FUNÇÃO AUXILIAR
+// HELPER FUNCTION
 // ════════════════════════════════════════════════════════════════════
 
 /**
- * Cria uma instância do middleware com callbacks
+ * Creates an instance of the middleware with callbacks
  */
 export function createStreamingMiddleware(
     onChunk: StreamCallback,

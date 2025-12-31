@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from '@/lib/db';
-import { agentStages, agentActions } from '@/db/schema';
-import { eq, asc } from 'drizzle-orm';
+import { agentStages } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 export async function createStageAction(agentId: string, order: number) {

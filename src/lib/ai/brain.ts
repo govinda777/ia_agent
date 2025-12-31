@@ -2,16 +2,16 @@ import { openai } from '@ai-sdk/openai';
 import { embed } from 'ai';
 import { db } from '@/lib/db';
 import { knowledgeBase } from '@/db/schema';
-import { cosineDistance, desc, gt, sql, eq, and } from 'drizzle-orm';
+import { desc, gt, sql, eq, and } from 'drizzle-orm';
 
 /**
- * Formata conteúdo em estrutura Markdown para organização e busca
+ * Formats content into a Markdown structure for organization and search
  */
 function formatAsMarkdown(item: {
     topic: string;
     content: string;
     contentType: 'text' | 'faq' | 'file';
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }): string {
     const timestamp = new Date().toISOString();
     const separator = '---';
@@ -19,25 +19,25 @@ function formatAsMarkdown(item: {
     // Frontmatter style metadata
     let markdown = `${separator}\n`;
     markdown += `# ${item.topic}\n\n`;
-    markdown += `**Tipo:** ${item.contentType === 'faq' ? '❓ FAQ' : item.contentType === 'file' ? '📄 Arquivo' : '📝 Texto'}\n`;
-    markdown += `**Criado em:** ${timestamp}\n`;
+    markdown += `**Type:** ${item.contentType === 'faq' ? '❓ FAQ' : item.contentType === 'file' ? '📄 File' : '📝 Text'}\n`;
+    markdown += `**Created At:** ${timestamp}\n`;
 
     if (item.metadata) {
         if (item.metadata.source) {
-            markdown += `**Fonte:** ${item.metadata.source}\n`;
+            markdown += `**Source:** ${item.metadata.source}\n`;
         }
         if (item.metadata.tags && Array.isArray(item.metadata.tags)) {
             markdown += `**Tags:** ${item.metadata.tags.join(', ')}\n`;
         }
         if (item.metadata.author) {
-            markdown += `**Autor:** ${item.metadata.author}\n`;
+            markdown += `**Author:** ${item.metadata.author}\n`;
         }
     }
 
     markdown += `\n${separator}\n\n`;
 
     // Content section
-    markdown += `## Conteúdo\n\n`;
+    markdown += `## Content\n\n`;
     markdown += item.content;
     markdown += `\n\n${separator}\n`;
 
@@ -48,7 +48,7 @@ function formatAsMarkdown(item: {
 }
 
 /**
- * Extrai keywords do conteúdo para busca
+ * Extracts keywords from the content for search
  */
 function extractKeywords(text: string): string[] {
     // Remove markdown syntax
@@ -57,13 +57,9 @@ function extractKeywords(text: string): string[] {
         .replace(/\s+/g, ' ')
         .toLowerCase();
 
-    // Common Portuguese stopwords to filter out
+    // Common English stopwords to filter out
     const stopwords = new Set([
-        'de', 'a', 'o', 'que', 'e', 'do', 'da', 'em', 'um', 'para', 'é',
-        'com', 'não', 'uma', 'os', 'no', 'se', 'na', 'por', 'mais', 'as',
-        'dos', 'como', 'mas', 'foi', 'ao', 'ele', 'das', 'tem', 'à', 'seu',
-        'sua', 'ou', 'ser', 'quando', 'muito', 'há', 'nos', 'já', 'está',
-        'eu', 'também', 'só', 'pelo', 'pela', 'até', 'isso', 'ela', 'entre'
+        'a', 'an', 'and', 'the', 'in', 'on', 'of', 'for', 'to', 'with', 'is', 'it'
     ]);
 
     // Extract words with 3+ characters that aren't stopwords
@@ -77,7 +73,7 @@ function extractKeywords(text: string): string[] {
 export class BrainService {
 
     /**
-     * Gera embedding para um texto usando OpenAI text-embedding-3-small
+     * Generates an embedding for a text using OpenAI text-embedding-3-small
      */
     async generateEmbedding(text: string): Promise<number[]> {
         const { embedding } = await embed({
@@ -88,11 +84,11 @@ export class BrainService {
     }
 
     /**
-     * Busca contextos relevantes na base de conhecimento (RAG)
-     * Suporta menções com @ para busca específica por tópico
+     * Retrieves relevant contexts from the knowledge base (RAG)
+     * Supports @mentions for specific topic search
      */
     async retrieveContext(agentId: string, query: string, limit: number = 3): Promise<string[]> {
-        // Check for @mention pattern (e.g., @faq-precos)
+        // Check for @mention pattern (e.g., @faq-pricing)
         const mentionMatch = query.match(/@([\w-]+)/);
 
         if (mentionMatch) {
@@ -137,13 +133,13 @@ export class BrainService {
     }
 
     /**
-     * Adiciona novo conhecimento com embedding e formatação Markdown
+     * Adds new knowledge with embedding and Markdown formatting
      */
     async addKnowledge(agentId: string, item: {
         topic: string;
         content: string;
         contentType?: 'text' | 'faq' | 'file';
-        metadata?: Record<string, any>;
+        metadata?: Record<string, unknown>;
     }) {
         const contentType = item.contentType || 'text';
 
@@ -178,7 +174,7 @@ export class BrainService {
     }
 
     /**
-     * Lista todos os tópicos de conhecimento de um agente (para referência)
+     * Lists all knowledge topics for an agent (for reference)
      */
     async listTopics(agentId: string): Promise<{ id: string; topic: string; contentType: string }[]> {
         const results = await db
