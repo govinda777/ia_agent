@@ -14,7 +14,19 @@
         "db:migrate": "drizzle-kit migrate",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
-        "test": "vitest run"
+        "test": "vitest run",
+        "prepare": "husky install",
+        "pre-commit": "lint-staged",
+        "format": "prettier --write ."
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,md,mdx,yml,yaml}": [
+            "prettier --write"
+        ]
     },
     "dependencies": {
         "@ai-sdk/anthropic": "^2.0.56",
