@@ -1,13 +1,10 @@
 module.exports = {
-  // Run TypeScript type checking on staged .ts and .tsx files using npm script
-  '**/*.{ts,tsx}': () => 'npm run lint:check',
-  
-  // Lint and format TypeScript and JavaScript files
+  // Run linting on staged files using relative paths
   '**/*.{js,jsx,ts,tsx}': [
-    'npm run lint:fix',
-    'npm run format',
+    (filenames) => filenames.map(f => `npx eslint "${f}" --fix`).join(' && '),
+    (filenames) => filenames.map(f => `npx prettier --write "${f}"`).join(' && '),
   ],
   
   // Format other files with Prettier
-  '**/*.{json,md,mdx,yml,yaml}': ['npm run format'],
+  '**/*.{json,md,mdx,yml,yaml}': (filenames) => filenames.map(f => `npx prettier --write "${f}"`).join(' && '),
 };

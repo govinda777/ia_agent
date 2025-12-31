@@ -1,7 +1,5 @@
-#!/usr/bin/env sh
-. "$(dirname "$0")/_/husky.sh"
-
+#!/bin/sh
 echo "🔍 Running pre-commit checks..."
 
-# Run lint-staged
-npx lint-staged --concurrent false
+# Run the Windows batch script
+cmd //c "$(dirname "$0")/pre-commit.bat"
