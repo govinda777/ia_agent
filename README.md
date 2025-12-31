@@ -55,6 +55,8 @@ cd ia_agent
 npm install
 ```
 
+> **Note**: This project uses Husky for git hooks. If you encounter `husky: command not found` errors during installation, see the [Husky Setup](#husky-setup) section below.
+
 ### 3. Configure environment variables
 
 Create a `.env.local` file in the project root:
@@ -206,6 +208,53 @@ npm run db:push
 | `npm run db:generate` | Generate Drizzle migrations |
 | `npm run db:push` | Apply migrations to the database |
 | `npm run db:studio` | Open Drizzle Studio (GUI) |
+
+## 🐕 Husky Setup
+
+This project uses Husky for git hooks to ensure code quality. If you encounter `husky: command not found` errors during `npm install`, follow these steps:
+
+### Prerequisites
+- Node.js >= 16.17.0
+- Git initialized repository
+
+### Installation Steps
+
+```bash
+# 1. Install Husky and lint-staged (if not already installed)
+npm install --save-dev husky@^8.0.3 lint-staged
+
+# 2. Initialize Husky
+npx husky install
+
+# 3. Create pre-commit hook
+npx husky add .husky/pre-commit "npx lint-staged"
+
+# 4. Make the hook executable (Linux/Mac/WSL)
+chmod +x .husky/pre-commit
+
+# 5. Test the setup
+npm run prepare
+```
+
+### Verification
+After setup, verify:
+- `.husky/pre-commit` file exists with `npx lint-staged` content
+- `npm install` runs without errors
+- Git commits automatically run linting
+
+### Troubleshooting Husky
+
+**Error**: `husky: command not found`
+- **Cause**: Husky not installed or incompatible Node.js version
+- **Solution**: Install compatible version: `npm install --save-dev husky@^8.0.3`
+
+**Error**: `husky - install command is DEPRECATED`
+- **Cause**: Using Husky v9+ with old syntax
+- **Solution**: Use `npx husky init` for v9+ or downgrade to v8.0.3
+
+**Error**: Permission denied on `.husky/pre-commit`
+- **Cause**: Hook file not executable
+- **Solution**: Run `chmod +x .husky/pre-commit`
 
 ## 🐛 Troubleshooting
 

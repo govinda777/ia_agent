@@ -1,5 +1,11 @@
-#!/bin/sh
-echo "🔍 Running pre-commit checks..."
+. "$(dirname "$0")/_/husky.sh"
 
-# Run the Windows batch script
-cmd //c "$(dirname "$0")/pre-commit.bat"
+if [[ "$(pwd)" == //wsl.localhost/* ]]; then
+  echo "Husky: Ambiente Windows/WSL detectado. Redirecionando para 'npx lint-staged' no WSL..."
+  wsl.exe -d Ubuntu npx lint-staged
+  exit $?
+else
+  echo "Husky: Ambiente Linux/WSL nativo detectado. Executando 'npx lint-staged'..."
+  npx lint-staged
+  exit $?
+finpx lint-staged
