@@ -66,11 +66,9 @@ jobs:
 
       - name: Lint code
         run: npm run lint
-        continue-on-error: true
 
       - name: Run unit tests
         run: npm test -- --coverage --run
-        continue-on-error: true
 
       - name: Upload test coverage
         uses: codecov/codecov-action@v4
@@ -79,12 +77,13 @@ jobs:
           file: ./coverage/lcov.info
           fail_ci_if_error: false
 
+      - name: Check code formatting
+        run: npx prettier --check .
+
       - name: Build application
-        if: github.event_name == 'push'
         run: npm run build
 
       - name: Run security audit
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
         run: npm audit --production --audit-level moderate
 
   # Add deployment jobs here once testing is stable
