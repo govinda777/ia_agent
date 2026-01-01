@@ -28,6 +28,7 @@ const eslintConfig = [
             "node_modules/**",
             ".next/**",
             "drizzle/**",
+            "scripts/**/*.mjs",
         ],
     },
 ];

@@ -45,7 +45,20 @@
         "infra:plan": "cd infrastructure && npm run plan",
         "infra:apply:staging": "cd infrastructure && npm run apply:staging",
         "infra:apply:prod": "cd infrastructure && npm run apply:prod",
-        "infra:destroy": "cd infrastructure && npm run destroy"
+        "infra:destroy": "cd infrastructure && npm run destroy",
+        "env:validate": "node scripts/env-validate.mjs",
+        "env:validate:fix": "node scripts/env-validate.mjs --fix",
+        "env:setup": "node scripts/env-setup.mjs",
+        "env:fix": "node scripts/env-fix.mjs",
+        "env:doctor": "node scripts/env-doctor.mjs",
+        "env:info": "node scripts/env-info.mjs",
+        "env:clean": "node scripts/env-clean.mjs",
+        "env:reset": "node scripts/env-reset.mjs",
+        "db:seed": "node src/db/seeds/index.mjs minimal",
+        "db:seed:minimal": "node src/db/seeds/index.mjs minimal",
+        "db:seed:full": "node src/db/seeds/index.mjs full",
+        "db:seed:reset": "node src/db/seeds/index.mjs reset",
+        "onboarding": "node scripts/onboarding-checklist.mjs"
     },
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": [
