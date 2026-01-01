@@ -1,4 +1,8 @@
 import { neon } from '@neondatabase/serverless';
+import { config } from 'dotenv';
+
+// Carregar variáveis de ambiente do .env.local
+config({ path: '.env.local' });
 
 const sql = neon(process.env.DATABASE_URL);
 
@@ -13,12 +17,12 @@ async function createDefaultUser() {
 
         console.log('Usuário criado/encontrado!');
         console.log('');
-        console.log('ADICIONE ESTA VARIAVEL NO VERCEL:');
+        console.log('ADICIONE ESTA VARIAVEL NO .env.local:');
         console.log(`DEFAULT_USER_ID=${result[0].id}`);
         console.log('');
-        console.log('1. Acesse: https://vercel.com/seu-projeto/settings/environment-variables');
+        console.log('1. Edite o arquivo .env.local');
         console.log('2. Adicione a variavel acima');
-        console.log('3. Redeploy o projeto');
+        console.log('3. Execute: npm run dev');
     } catch (error) {
         console.error('Erro:', error);
     }

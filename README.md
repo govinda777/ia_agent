@@ -7,7 +7,8 @@ A platform for automating customer service on WhatsApp with configurable AI agen
 - **Framework:** Next.js 15 (App Router)
 - **Language:** TypeScript (Strict Mode)
 - **AI Engine:** Vercel AI SDK Core + OpenAI
-- **Database:** Neon (Serverless Postgres) + Drizzle ORM
+- **Database:** PostgreSQL + Drizzle ORM
+- **Local Development:** Docker + PostgreSQL
 - **Deployment:** Vercel
 - **UI Library:** Shadcn UI
 - **Styling:** Tailwind CSS 4
@@ -40,6 +41,40 @@ A platform for automating customer service on WhatsApp with configurable AI agen
     └── constants.ts        # Application constants
 ```
 
+## 🚀 Setup Automatizado (Recomendado)
+
+### Setup completo com um comando:
+
+```bash
+npm run setup:local
+```
+
+Este script automatizado:
+- ✅ Verifica pré-requisitos (Node.js, npm)
+- ✅ Instala dependências automaticamente
+- ✅ Cria arquivos de configuração (.env.local, .env.example)
+- ✅ Configura Docker para banco local (opcional)
+- ✅ Adiciona scripts úteis ao package.json
+- ✅ Funciona em Windows, macOS e Linux
+
+### Comandos disponíveis após setup:
+
+```bash
+# Iniciar banco local com Docker
+npm run docker:dev
+
+# Parar containers Docker
+npm run docker:down
+
+# Ver logs do Docker
+npm run docker:logs
+
+# Reset completo do banco
+npm run db:reset
+```
+
+---
+
 ## 🛠️ Local Setup
 
 ### 1. Clone repository
@@ -57,63 +92,119 @@ npm install
 
 > **Note**: This project uses Husky for git hooks. If you encounter `husky: command not found` errors during installation, see the [Husky Setup](#husky-setup) section below.
 
-### 3. Configure environment variables
+---
 
-Create a `.env.local` file in the project root:
+## 🚀 Como Subir a Aplicação
 
+### Setup Rápido (Banco Local)
+
+```bash
+# 1. Clonar e instalar
+git clone git@github.com:drtrafego/ia_agent.git
+cd ia_agent
+npm install
+
+# 2. Configurar ambiente
+cp .env.example .env.local
+# Edite .env.local com sua OPENAI_API_KEY
+
+# 3. Setup do banco local
+npm run setup:db
+
+# 4. Criar tabelas
+npm run db:push
+
+# 5. Criar usuário padrão
+node create-default-user.mjs
+
+# 6. Iniciar aplicação
+npm run dev
+```
+
+Acesse: http://localhost:3000
+
+---
+
+### Setup Manual Detalhado
+
+#### 1. Instalar Dependências
+```bash
+npm install
+```
+
+#### 2. Configurar Variáveis de Ambiente
+Crie `.env.local`:
 ```env
-# Database (Required)
-DATABASE_URL=postgresql://user:password@host.neon.tech/database?sslmode=require
-
-# OpenAI (Required)
-OPENAI_API_KEY=sk-proj-...
-
-# Google Calendar (Optional)
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-GOOGLE_REFRESH_TOKEN=
-
-# Default User ID (Required - see "Database Setup" section)
-DEFAULT_USER_ID=uuid-of-default-user
-
-# NextAuth
+DATABASE_URL=postgresql://postgres:password@localhost:5432/ia_agent_dev
+OPENAI_API_KEY=sk-proj-sua-chave-aqui
+DEFAULT_USER_ID=
 NEXTAUTH_URL=http://localhost:3000
 ```
 
-> ⚠️ **IMPORTANT**: Never commit the `.env.local` file! It is already in the `.gitignore`.
+#### 3. Configurar Banco de Dados Local
 
-### 4. Database Setup
-
-#### 4.1. Create tables
-
+**Opção A: Docker (Recomendado)**
 ```bash
-npx dotenv -e .env.local -- npx drizzle-kit push
+# Iniciar PostgreSQL + Redis
+npm run docker:dev
+
+# Verificar se está rodando
+npm run docker:logs
 ```
 
-#### 4.2. Create default user
+**Opção B: PostgreSQL Nativo**
+```bash
+# Instalar PostgreSQL se não tiver
+# Windows: https://www.postgresql.org/download/windows/
+# macOS: brew install postgresql
+# Ubuntu: sudo apt-get install postgresql
 
-Access the [Neon Console](https://console.neon.tech) → SQL Editor and run:
+# Criar banco
+createdb ia_agent_dev
 
-```sql
-INSERT INTO users (name, email, created_at, updated_at) 
-VALUES ('Admin', 'admin@ia-agent.com', NOW(), NOW())
-ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-RETURNING id;
+# Usar URL: postgresql://postgres:senha@localhost:5432/ia_agent_dev
 ```
 
-Copy the returned `id` and add it to `.env.local`:
-
-```env
-DEFAULT_USER_ID=<copied-id>
+#### 4. Criar Tabelas
+```bash
+npm run db:push
 ```
 
-### 5. Run in development
+#### 5. Criar Usuário Padrão
+```bash
+node create-default-user.mjs
+# Copie o ID retornado para .env.local
+```
 
+#### 6. Iniciar Aplicação
 ```bash
 npm run dev
 ```
 
-Access [http://localhost:3000](http://localhost:3000)
+---
+
+## 🛠️ Comandos Úteis
+
+### Banco de Dados Local
+```bash
+npm run setup:db      # Setup automático do banco
+npm run docker:dev    # Iniciar PostgreSQL + Redis
+npm run docker:down   # Parar containers
+npm run docker:logs   # Ver logs
+npm run db:push       # Criar tabelas
+npm run db:studio     # Interface visual
+npm run db:reset      # Reset completo
+```
+
+### Desenvolvimento
+```bash
+npm run dev           # Servidor desenvolvimento
+npm run build         # Build produção
+npm run start         # Servidor produção
+npm run lint          # Verificar código
+```
+
+---
 
 ## 🌐 Deploy to Vercel
 

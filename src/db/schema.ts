@@ -30,7 +30,7 @@ import {
     pgEnum,
     index,
     uniqueIndex,
-    vector,
+    // vector, // Temporariamente comentado
     primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
@@ -385,7 +385,9 @@ export const knowledgeBase = pgTable('knowledge_base', {
 
     // Embedding para busca semântica (RAG)
     // 1536 dimensões = compatível com text-embedding-3-small da OpenAI
-    embedding: vector('embedding', { dimensions: 1536 }),
+    // Temporariamente comentado - precisa habilitar extensão vector no Neon
+    // embedding: vector('embedding', { dimensions: 1536 }),
+    embedding: text('embedding'), // Temporário como texto
 
     // Metadados do arquivo (para conteúdo tipo 'file')
     metadata: jsonb('metadata').$type<{
