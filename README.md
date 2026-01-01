@@ -236,6 +236,25 @@ chmod +x .husky/pre-commit
 npm run prepare
 ```
 
+### Windows Environment Setup
+
+For Windows users, the pre-commit hook needs special configuration:
+
+```bash
+# 1. After npx husky install, create the pre-commit file manually
+echo "#!/usr/bin/env sh" > .husky/pre-commit
+echo ". \"$(dirname \"$0\")/_/husky.sh\"" >> .husky/pre-commit
+echo "" >> .husky/pre-commit
+echo "npx lint-staged" >> .husky/pre-commit
+
+# 2. Set executable permissions using Git
+git update-index --chmod=+x .husky/pre-commit
+
+# 3. Add and commit the hook
+git add .husky/pre-commit
+git commit -m "Configure Husky pre-commit hook" --no-verify
+```
+
 ### Verification
 After setup, verify:
 - `.husky/pre-commit` file exists with `npx lint-staged` content
@@ -252,9 +271,17 @@ After setup, verify:
 - **Cause**: Using Husky v9+ with old syntax
 - **Solution**: Use `npx husky init` for v9+ or downgrade to v8.0.3
 
+**Error**: `cannot spawn .husky/pre-commit: No such file or directory`
+- **Cause**: Hook file not executable or incorrect permissions
+- **Solution**: Run `git update-index --chmod=+x .husky/pre-commit`
+
 **Error**: Permission denied on `.husky/pre-commit`
 - **Cause**: Hook file not executable
-- **Solution**: Run `chmod +x .husky/pre-commit`
+- **Solution**: Run `chmod +x .husky/pre-commit` (Linux/Mac) or `git update-index --chmod=+x .husky/pre-commit` (Windows)
+
+**Error**: Pre-commit hook not working on Windows
+- **Cause**: WSL-specific logic or incorrect shebang
+- **Solution**: Use the simplified hook configuration shown in Windows Environment Setup
 
 ## 🐛 Troubleshooting
 
