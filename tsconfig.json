@@ -11,6 +11,7 @@
         "strict": true,
         "noEmit": true,
         "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
         "module": "esnext",
         "moduleResolution": "bundler",
         "resolveJsonModule": true,
@@ -42,6 +43,13 @@
         ".next/types/**/*.ts"
     ],
     "exclude": [
-        "node_modules"
+        "node_modules",
+        "dist",
+        ".next",
+        "coverage",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts",
+        "**/*.spec.tsx"
     ]
 }
