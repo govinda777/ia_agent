@@ -28,14 +28,14 @@ const isLocalDB = process.env.DATABASE_URL.includes('localhost') ||
 
 // Cliente PostgreSQL
 let connectionString = process.env.DATABASE_URL;
-let client;
+let client: any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 if (isLocalDB) {
     // Para PostgreSQL local, usar postgres-js
     client = postgres(connectionString);
 } else {
-    // Para Neon, manter o neon
-    const { neon } = require('@neondatabase/serverless');
+    // Para Neon, usar import dinâmico
+    const { neon } = await import('@neondatabase/serverless');
     client = neon(connectionString);
 }
 

@@ -61,6 +61,7 @@
         "db:seed:minimal": "node src/db/seeds/index.mjs minimal",
         "db:seed:full": "node src/db/seeds/index.mjs full",
         "db:seed:reset": "node src/db/seeds/index.mjs reset",
+        "db:test:setup": "node scripts/setup-test-db.mjs",
         "onboarding": "node scripts/onboarding-checklist.mjs"
     },
     "lint-staged": {

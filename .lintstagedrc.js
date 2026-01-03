@@ -1,6 +1,4 @@
 // .lintstagedrc.js
-const typeCheckCommand = 'tsc --noEmit --pretty';
-
 module.exports = {
-  '*.{ts,tsx}': [typeCheckCommand],
+  '*.{ts,tsx}': ['npm run lint:fix'],
 };

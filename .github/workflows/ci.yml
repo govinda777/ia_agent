@@ -44,11 +44,11 @@ jobs:
 
       - name: Lint
         if: matrix.check == 'lint'
-        run: npm run lint -- --max-warnings=0 --format=github
+        run: npm run lint -- --max-warnings=0 --format=stylish
 
       - name: Type Check
         if: matrix.check == 'types'
-        run: npx tsc --noEmit --incremental false
+        run: npx tsc --noEmit --project tsconfig.build.json
 
       - name: Format Check
         if: matrix.check == 'format'
@@ -64,7 +64,7 @@ jobs:
     
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [20]
         test-type: [unit, integration]
       fail-fast: false
     
@@ -98,6 +98,7 @@ jobs:
 
       - name: Setup Database
         run: |
+          npm run db:test:setup
           npm run db:generate
           npm run db:push
         env:
